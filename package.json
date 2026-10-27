@@ -1,0 +1,15 @@
+{
+  "name": "taskaro_updated_plans_notifications_fixed",
+  "version": "1.0.0",
+  "description": "Taskaro task management web application",
+  "main": "Taskaro_Project/server.js",
+  "scripts": {
+    "start": "npm start --prefix Taskaro_Project",
+    "dev": "npm run dev --prefix Taskaro_Project",
+    "test": "npm test --prefix Taskaro_Project"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

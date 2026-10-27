@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#2449e8"><title>taskaro — Plan with clarity</title><link rel="stylesheet" href="/css/styles.css"></head>
+<body><div id="toast" class="toast" role="status"></div>
+<section id="authView" class="auth-shell">
+  <div class="welcome-panel"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="welcome-copy"><div class="brand"><img class="brand-logo" src="/images/taskaro-logo.png" alt="Taskaro target logo"><span>Taskaro</span></div><p class="eyebrow">YOUR DAY, IN CONTROL</p><h1>WELCOME</h1><br><h2>TO TASK MANAGER</h2><p>Plan your projects, focus on the right tasks, and make progress one clear step at a time.</p><div class="welcome-pills"><span>✓ Smart priorities</span><span>◷ Deadline tracking</span></div></div></div>
+  <div class="auth-content"><button class="theme-toggle auth-theme" id="themeToggle" aria-label="Toggle theme">☾</button>
+    <div id="loginForm" class="auth-form"><h2>Hey !</h2><p class="muted">Sign in to access your taskaro workspace.</p><form id="login"><label>Email address</label><input name="identity" type="email" placeholder="you@example.com" required autocomplete="username"><label>Password</label><div class="password-wrap"><input name="password" id="loginPassword" type="password" placeholder="Enter your password" required autocomplete="current-password"><button type="button" class="show-pass" data-target="loginPassword">Show</button></div><div class="form-row"><label class="check-label"><input type="checkbox" name="remember" checked> Remember me</label><button class="text-button" type="button" id="forgotBtn">Forgot password?</button></div><button class="primary-btn full" type="submit">Sign in</button></form><p class="switch-auth">Don't have an account? <button id="showSignup" class="text-button">Sign up</button></p></div>
+    <div id="signupForm" class="auth-form hidden"><h2>Create account</h2><p class="muted">Start building a calmer, clearer workflow.</p><form id="signup"><label>Full name</label><input name="name" placeholder="Your name" required minlength="2" maxlength="100"><label>Email address</label><input name="email" type="email" placeholder="you@example.com" required><label>Password</label><div class="password-wrap"><input name="password" id="signupPassword" type="password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="show-pass" data-target="signupPassword">Show</button></div><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required><p class="fine-print">Create your account with your name, email, and password. No email OTP required.</p><button class="primary-btn full" type="submit">Create account</button></form><p class="switch-auth">Already have an account? <button id="showLogin" class="text-button">Sign in</button></p></div>
+    <div id="forgotForm" class="auth-form hidden"><h2>Reset password</h2><p class="muted">We'll send a secure reset link if your account is eligible.</p><form id="forgot"><label>Email address</label><input name="email" type="email" required placeholder="you@example.com"><button class="primary-btn full" type="submit">Send reset link</button></form><button id="backLogin" class="text-button back-link">← Back to sign in</button></div>
+    <div id="resetForm" class="auth-form hidden"><h2>Choose a new password</h2><form id="reset"><label>New password</label><input name="password" type="password" minlength="8" required autocomplete="new-password"><label>Confirm new password</label><input name="confirmPassword" type="password" minlength="8" required autocomplete="new-password"><button class="primary-btn full" type="submit">Update password</button></form></div>
+  </div>
+</section>
+<section id="appView" class="app-shell hidden">
+  <aside id="sidebar" class="sidebar"><div class="brand"><img class="brand-logo" src="/images/taskaro-logo.png" alt="Taskaro target logo"><span>Taskaro</span></div><div class="workspace-label">WORKSPACE</div><button class="nav-item active" data-view="home"><span>⌂</span> Home</button><button class="nav-item" data-view="tasks"><span>☑</span> My Tasks</button><button class="nav-item" data-view="planner"><span>⏱</span> Time Table</button><button class="nav-item" data-view="resources"><span>◇</span> Notes</button><button class="nav-item" data-view="assistant"><span>✧</span> Ask AI</button><div class="sidebar-bottom"><div class="mini-tip"><span>✦</span><strong>Small steps add up.</strong><p>Keep moving forward, one task at a time.</p></div><button class="nav-item" id="logoutBtn"><span>↪</span> Sign out</button></div></aside>
+  <main class="main-area"><header class="topbar"><button id="menuToggle" class="icon-btn mobile-menu">☰</button><div class="search-global"><span>⌕</span><input id="globalSearch" placeholder="Search your tasks..."><kbd>↵</kbd></div><div class="top-actions"><button id="topAsk" class="ask-btn">✧ <span>Ask AI</span></button><button id="notificationsBtn" class="icon-btn" title="Notifications">♧<i class="notification-dot"></i></button><button id="themeToggleApp" class="icon-btn" title="Toggle theme">☾</button><div class="user-menu"><span id="avatar" class="avatar">U</span><span id="userName">User</span><button id="profileMenu" class="icon-btn small">⌄</button><div id="profileDropdown" class="dropdown hidden"><button id="profileLogout">Sign out</button></div></div></div></header>
+    <div class="page-content">
+      <section id="view-home" class="view"><div class="page-heading"><div><p class="eyebrow">YOUR WORKSPACE</p><h1 id="greeting">Good evening</h1><p class="muted">A little progress each day adds up to big results.</p></div><div class="heading-actions"><button class="outline-btn" data-goto="planner">⏱ Daily Routine</button><button class="primary-btn" id="addTaskTop">＋ New task</button></div></div>
+        <div class="stats-grid"><article class="stat-card total"><div class="stat-top"><span>Total tasks</span><span class="stat-icon">▤</span></div><strong id="statTotal">0</strong><small>All your tasks</small></article><article class="stat-card pending"><div class="stat-top"><span>Pending</span><span class="stat-icon">◷</span></div><strong id="statPending">0</strong><small>Waiting to begin</small></article><article class="stat-card completed"><div class="stat-top"><span>Completed</span><span class="stat-icon">✓</span></div><strong id="statCompleted">0</strong><small>Nicely done</small></article><article class="stat-card overdue"><div class="stat-top"><span>Overdue</span><span class="stat-icon">!</span></div><strong id="statOverdue">0</strong><small>Needs attention</small></article></div>
+
+        <!-- Today's Daily Routine & Performance Glance Widget -->
+        <article class="panel home-routine-panel" style="margin-bottom:22px">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">DAILY ROUTINE &amp; PERFORMANCE</p>
+              <h2>Today's Routine</h2>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="focus-badge" id="homeRoutineStatusBadge">In Progress</span>
+              <button class="text-button" data-goto="planner">Open Time Table →</button>
+            </div>
+          </div>
+          <div class="home-routine-content">
+            <div class="home-routine-stats">
+              <div class="routine-mini-progress">
+                <span class="routine-mini-pct" id="homeRoutinePct">0%</span>
+                <span class="muted small-text">done</span>
+              </div>
+              <div class="home-routine-bar-wrap">
+                <div class="home-routine-bar" id="homeRoutineProgressBar" style="width:0%"></div>
+              </div>
+              <div class="home-routine-counts">
+                <span>🔥 Streak: <b id="homeRoutineStreak">0 days</b></span> •
+                <span>Done: <b id="homeRoutineDoneCount">0</b></span> •
+                <span>Remaining: <b id="homeRoutinePendingCount">0</b></span>
+              </div>
+            </div>
+            <div id="homeRoutineItems" class="home-routine-checklist"></div>
+          </div>
+        </article>
+
+        <div class="dashboard-grid"><article class="panel priority-panel"><div class="panel-heading"><div><p class="eyebrow">FOCUS FINDER</p><h2>Priority focus</h2></div><span class="focus-badge">✦ Focus</span></div><div id="priorityFocus" class="priority-focus"><div class="empty-icon">✦</div><h3>You're all caught up</h3><p class="muted">Add a task and your next focus will appear here.</p></div></article>
+          <article class="panel progress-panel"><div class="panel-heading"><div><p class="eyebrow">YOUR MOMENTUM</p><h2>Task progress</h2></div><span class="muted small-text">Overall</span></div><div class="progress-main"><div id="progressRing" class="progress-ring"><div><strong id="completionPct">0%</strong><small>complete</small></div></div><div class="progress-legend"><div><span class="legend-dot green"></span><span>Completed</span><b id="legendCompleted">0</b></div><div><span class="legend-dot yellow"></span><span>Pending</span><b id="legendPending">0</b></div><div><span class="legend-dot blue"></span><span>In progress</span><b id="legendProgress">0</b></div></div></div><div class="progress-track"><span id="progressBar"></span></div></article></div>
+        <article class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">KEEP IT MOVING</p><h2>Upcoming tasks</h2></div><button class="text-button" data-goto="tasks">View all →</button></div><div id="recentTasks" class="task-list"></div></article>
+      </section>
+      <section id="view-tasks" class="view hidden"><div class="page-heading"><div><p class="eyebrow">STAY ORGANIZED</p><h1>My Tasks</h1><p class="muted">Everything you need to do, in one place.</p></div><button class="primary-btn" id="addTask">＋ New task</button></div><div class="panel filters-panel"><div class="filters"><input id="taskSearch" placeholder="Search title or description…"><select id="statusFilter"><option value="">All statuses</option><option>Pending</option><option>In Progress</option><option>Completed</option><option>Overdue</option></select><select id="priorityFilter"><option value="">All priorities</option><option>High</option><option>Medium</option><option>Low</option></select><select id="categoryFilter"><option value="">All categories</option></select><select id="sortFilter"><option value="deadline">Deadline</option><option value="priority">Priority</option><option value="created">Recently created</option><option value="alphabetical">Alphabetical</option></select><button id="clearFilters" class="outline-small">Clear</button></div></div><div id="allTasks" class="task-list full-task-list"></div></section>
+      <section id="view-planner" class="view hidden">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">DAILY ROUTINE &amp; PERFORMANCE</p>
+            <h1>Time Table &amp; Daily Routine</h1>
+            <p class="muted">Structure your habits, tick off completed tasks, track weekly performance graphs, and set dynamic rest days.</p>
+          </div>
+          <div class="heading-actions">
+            <button type="button" class="outline-btn skip-day-btn" id="toggleSkipDayBtn" title="Set or remove a rest/skip day">🌴 Rest / Skip Day</button>
+            <button type="button" class="outline-btn" id="openTaskPickerBtn" title="Select an existing task to schedule into your timetable">📋 Add From Tasks</button>
+            <button type="button" class="primary-btn" id="plannerAdd">＋ Add Routine</button>
+          </div>
+        </div>
+
+        <!-- Dynamic Rest / Skip Day Banner -->
+        <div id="skipDayBanner" class="skip-day-banner hidden">
+          <div class="skip-banner-content">
+            <span class="skip-banner-icon">🌴</span>
+            <div>
+              <strong id="skipBannerTitle">Rest / Skip Day Active</strong>
+              <p id="skipBannerDesc">Daily routine requirements are paused today. Your consistency streak is protected!</p>
+            </div>
+          </div>
+          <button type="button" class="outline-small" id="removeSkipDayBtn">Resume Routine</button>
+        </div>
+
+        <!-- 3-Card Performance Dashboard & Visual Graph -->
+        <div class="routine-performance-grid">
+          <div class="routine-perf-card">
+            <div class="perf-header">
+              <h3>Today's Progress</h3>
+              <span class="perf-pill" id="todayPerfPill">In Progress</span>
+            </div>
+            <div class="progress-body">
+              <div class="progress-radial" id="routineRadial" style="--pct:0%">
+                <div class="progress-radial-inner">
+                  <strong id="routineRadialPct">0%</strong>
+                  <small>Done</small>
+                </div>
+              </div>
+              <div class="progress-stats-list">
+                <div class="stat-line"><span><span class="dot green"></span>Completed</span><b id="routineCompletedCount">0</b></div>
+                <div class="stat-line"><span><span class="dot orange"></span>Skipped</span><b id="routineSkippedCount">0</b></div>
+                <div class="stat-line"><span><span class="dot slate"></span>Pending</span><b id="routinePendingCount">0</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="routine-perf-card">
+            <div class="perf-header">
+              <h3>Consistency &amp; Streaks</h3>
+              <span class="perf-pill success" id="routineStreakBadge">Active</span>
+            </div>
+            <div class="streak-display">
+              <span class="streak-flame">🔥</span>
+              <span class="streak-num" id="routineStreakNum">0</span>
+              <span class="muted" style="font-size:16px;font-weight:600">Days</span>
+            </div>
+            <div class="streak-meta">
+              <span>Weekly Score: <b id="routineWeeklyScore">0%</b></span> •
+              <span>Total Done: <b id="routineTotalDone">0</b></span>
+            </div>
+            <div class="streak-tags">
+              <span class="streak-badge">🌴 Protected on rest days</span>
+              <span class="streak-badge">⚡ Daily Momentum</span>
+            </div>
+          </div>
+
+          <div class="routine-perf-card">
+            <div class="perf-header">
+              <h3>7-Day Performance Trend</h3>
+              <span class="muted small-text">Target: 80%</span>
+            </div>
+            <div class="routine-graph-container" id="routineGraphContainer">
+              <!-- Rendered by app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Date Controls & Routine Category Filters -->
+        <div class="routine-controls-panel">
+          <div class="date-navigator">
+            <button type="button" class="outline-small" id="routinePrevDay" title="Previous Day">←</button>
+            <button type="button" class="outline-small active" id="routineToday">Today</button>
+            <button type="button" class="outline-small" id="routineNextDay" title="Next Day">→</button>
+            <span class="current-date-badge" id="currentRoutineDateLabel">Loading date...</span>
+            <input type="date" id="routineDatePicker" aria-label="Select custom date">
+          </div>
+          <div class="routine-filter-chips">
+            <button type="button" class="chip active" data-routine-cat="">All</button>
+            <button type="button" class="chip" data-routine-cat="Study">Study</button>
+            <button type="button" class="chip" data-routine-cat="Work">Work</button>
+            <button type="button" class="chip" data-routine-cat="Health">Health</button>
+            <button type="button" class="chip" data-routine-cat="Habit">Habit</button>
+            <button type="button" class="chip" data-routine-cat="Personal">Personal</button>
+          </div>
+        </div>
+
+        <!-- Create / Edit Routine Form Panel -->
+        <div class="panel daily-plan-panel" id="planFormPanel" hidden>
+          <div class="panel-heading">
+            <h2 id="planFormTitle">Add Routine / Slot</h2>
+            <button type="button" class="mini-icon-btn" id="closePlanFormBtn" title="Close form">×</button>
+          </div>
+          <form id="planForm" class="plan-form">
+            <input type="hidden" name="id">
+            <div class="field full-span" id="importTaskGroup">
+              <label>📋 Link from My Tasks (optional auto-fill)</label>
+              <select name="task_id" id="planTaskSelect">
+                <option value="">-- Choose an existing task to auto-fill (optional) --</option>
+              </select>
+              <small class="muted" style="display:block;margin-top:4px">Auto-populates title &amp; category, and ticking the routine slot marks your task done!</small>
+            </div>
+            <div class="field full-span">
+              <label>Routine / Activity Name *</label>
+              <input name="name" id="planNameInput" required maxlength="180" placeholder="e.g. Morning Workout, Math &amp; DSA, Project Work">
+            </div>
+            <div class="field">
+              <label>Category</label>
+              <select name="category" id="planCategory">
+                <option value="General">General</option>
+                <option value="Study">Study</option>
+                <option value="Work">Work</option>
+                <option value="Health">Health &amp; Fitness</option>
+                <option value="Habit">Habit</option>
+                <option value="Personal">Personal</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Start Date *</label>
+              <input name="date" id="planDate" type="date" required>
+            </div>
+            <div class="field">
+              <label>Start Time</label>
+              <input name="start_time" id="planStart" type="time" value="09:00" required>
+            </div>
+            <div class="field">
+              <label>End Time</label>
+              <input name="end_time" id="planEnd" type="time" value="10:30" required>
+            </div>
+            <div class="field full-span">
+              <label>Duration</label>
+              <output id="planDuration" class="duration-output">1 hour 30 minutes</output>
+            </div>
+            <div class="field full-span">
+              <label>Frequency / Repeat</label>
+              <div class="repeat-options">
+                <label><input type="radio" name="repeat" value="daily" checked> Daily (Every day)</label>
+                <label><input type="radio" name="repeat" value="weekdays"> Weekdays (Mon–Fri)</label>
+                <label><input type="radio" name="repeat" value="weekends"> Weekends (Sat–Sun)</label>
+                <label><input type="radio" name="repeat" value="weekly"> Weekly</label>
+                <label><input type="radio" name="repeat" value="once"> Once</label>
+              </div>
+            </div>
+            <div class="field full-span">
+              <label>Target / Notes (optional)</label>
+              <textarea name="notes" rows="3" maxlength="3010" placeholder="What is the goal or milestone for this slot?"></textarea>
+            </div>
+            <div class="field full-span">
+              <label class="check-label"><input type="checkbox" name="reminder" checked> In-app reminder when slot begins</label>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="outline-small" id="cancelPlanEdit">Cancel</button>
+              <button type="submit" class="primary-btn" id="savePlanBtn">Save Routine</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Daily Routine Checklist / Time Table Cards -->
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2 id="planItemsHeading">Today's Routine Checklist</h2>
+              <p class="muted" id="planItemsSub">Click the circular tick mark to mark completed for this day.</p>
+            </div>
+          </div>
+          <div id="planItems" class="routine-items-list"></div>
+        </div>
+
+        <!-- Weekly Calendar Grid Overview -->
+        <div class="panel planner-panel">
+          <div class="planner-toolbar">
+            <button type="button" id="prevWeek" class="outline-small">← Previous</button>
+            <h2 id="weekLabel">This week</h2>
+            <button type="button" id="nextWeek" class="outline-small">Next →</button>
+            <button type="button" id="todayWeek" class="text-button">Current Week</button>
+          </div>
+          <div id="plannerGrid" class="planner-grid"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-heading">
+            <h2>Unscheduled Tasks</h2>
+            <span class="muted small-text">Tasks without a due date</span>
+          </div>
+          <div id="unscheduledTasks" class="task-list"></div>
+        </div>
+      </section>
+      <section id="view-resources" class="view hidden"><div class="page-heading"><div><p class="eyebrow">YOUR PERSONAL LIBRARY</p><h1>Notes</h1><p class="muted">Write and save your notes and links.</p></div><button class="primary-btn" id="addResource">＋ Add note</button></div><div id="resourcesGrid" class="resources-grid"></div></section>
+      <section id="view-assistant" class="view hidden"><div class="page-heading"><div><p class="eyebrow">YOUR PERSONAL PLANNING PARTNER</p><h1>Ask AI</h1><p class="muted">Get help prioritizing, planning, and breaking work into steps.</p></div></div><div class="assistant-layout"><div class="panel assistant-chat"><div class="assistant-head"><span class="assistant-avatar">✧</span><div><h2>taskaro Assistant</h2><p class="muted"><span class="online-dot"></span> Private to your workspace</p></div><span class="mode-pill" id="assistantMode">Rule-based fallback</span></div><div id="chatMessages" class="chat-messages"><div class="chat-bubble bot">Hi! I can help you plan your day, break down a task, or find what needs attention first. What would you like to work on?</div></div><form id="chatForm" class="chat-form"><textarea name="message" rows="2" placeholder="Ask about your tasks or plan your day…" required></textarea><button class="primary-btn" type="submit">Send ↑</button></form><p class="fine-print">If no AI API key is configured, answers are clearly labelled rule-based suggestions.</p></div><div class="panel prompt-panel"><h2>Try asking</h2><button class="prompt-suggestion" data-prompt="Make a plan for today">☀ Make a plan for today <span>→</span></button><button class="prompt-suggestion" data-prompt="Which task should I do first?">✦ What should I do first? <span>→</span></button><button class="prompt-suggestion" data-prompt="Show my overdue tasks">◷ Find overdue tasks <span>→</span></button><button class="prompt-suggestion" data-prompt="Break my most important task into subtasks">☷ Break a task into steps <span>→</span></button></div></div></section>
+    </div>
+  </main>
+  <!-- Mobile Bottom Tab Bar with Direct Tap Icons -->
+  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <button type="button" class="bottom-nav-item active" data-view="home" aria-label="Home">
+      <span class="bottom-nav-icon">⌂</span>
+      <span class="bottom-nav-label">Home</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-view="tasks" aria-label="My Tasks">
+      <span class="bottom-nav-icon">☑</span>
+      <span class="bottom-nav-label">Tasks</span>
+    </button>
+    <button type="button" class="bottom-nav-item bottom-nav-highlight" data-view="planner" aria-label="Time Table & Daily Routine">
+      <span class="bottom-nav-icon">⏱</span>
+      <span class="bottom-nav-label">Routine</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-view="resources" aria-label="Notes">
+      <span class="bottom-nav-icon">◇</span>
+      <span class="bottom-nav-label">Notes</span>
+    </button>
+    <button type="button" class="bottom-nav-item" data-view="assistant" aria-label="Ask AI">
+      <span class="bottom-nav-icon">✧</span>
+      <span class="bottom-nav-label">Ask AI</span>
+    </button>
+  </nav>
+</section>
+<div id="modalBackdrop" class="modal-backdrop hidden"><div id="modal" class="modal" role="dialog" aria-modal="true"><div class="modal-heading"><h2 id="modalTitle">New task</h2><button id="closeModal" class="icon-btn">×</button></div><div id="modalBody"></div></div></div>
+
+<!-- Dynamic Rest / Skip Day Setup & Deletion Modal -->
+<div id="skipDayModal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:540px">
+    <div class="modal-heading">
+      <h2>🌴 Configure Rest / Skip Day</h2>
+      <button id="closeSkipDayModal" class="icon-btn">×</button>
+    </div>
+    <form id="skipDayForm" class="modal-form">
+      <div class="field full-span">
+        <label>Target Date *</label>
+        <input type="date" name="skip_date" id="skipDateInput" required>
+      </div>
+      <div class="field full-span">
+        <label>Reason for Skip / Rest Day</label>
+        <select name="skip_reason" id="skipReasonSelect">
+          <option value="Rest &amp; Recovery">🌴 Rest &amp; Recovery (Scheduled Break)</option>
+          <option value="Vacation / Holiday">🏖️ Vacation / Holiday</option>
+          <option value="Sick Leave">🤒 Sick Leave / Health Recovery</option>
+          <option value="Travel">✈️ Travel &amp; Commute</option>
+          <option value="Exams Finished">🎉 Exams / Major Project Completed</option>
+          <option value="custom">✍️ Custom Reason...</option>
+        </select>
+      </div>
+      <div class="field full-span hidden" id="customReasonField">
+        <label>Enter Custom Reason</label>
+        <input name="custom_reason" id="customReasonInput" maxlength="100" placeholder="e.g. Attending family wedding">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="outline-small" id="cancelSkipDayModal">Cancel</button>
+        <button type="submit" class="primary-btn" id="confirmSkipDayBtn">Save Rest / Skip Day</button>
+      </div>
+    </form>
+
+    <!-- Scheduled Skip Days Management & Deletion List -->
+    <div class="skip-days-management-section">
+      <div class="skip-days-list-header">
+        <h4>📅 Your Scheduled Rest / Skip Days</h4>
+        <span class="muted small-text" id="skipDaysCount">0 scheduled</span>
+      </div>
+      <div id="skipDaysListContainer" class="skip-days-list">
+        <p class="muted small-text">No rest days scheduled yet.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add from Tasks Picker Modal -->
+<div id="taskPickerModal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:600px">
+    <div class="modal-heading">
+      <h2>📋 Add Routine From My Tasks</h2>
+      <button id="closeTaskPickerModal" class="icon-btn">×</button>
+    </div>
+    <div class="task-picker-body">
+      <p class="muted" style="margin:0 0 12px;font-size:13px">Choose an existing task to schedule as a dedicated daily routine slot in your time table.</p>
+      <input type="text" id="taskPickerSearch" placeholder="Search tasks by title or category..." class="task-picker-search">
+      <div id="taskPickerItems" class="task-picker-items"></div>
+    </div>
+  </div>
+</div>
+
+<div id="notificationPanel" class="notification-panel hidden"><div class="panel-heading"><h3>Notifications</h3><button id="markAllRead" class="text-button">Mark all read</button><button id="closeNotifications" class="icon-btn">×</button></div><div id="notificationItems"></div><form id="broadcastForm" class="broadcast-form"><h4>Admin announcement</h4><input name="title" placeholder="Announcement title" required maxlength="160"><textarea name="message" placeholder="Message to all users" required maxlength="2000"></textarea><button class="outline-small" type="submit">Broadcast to users</button><p class="fine-print">Only the account matching ADMIN_EMAIL in .env can send this.</p></form></div>
+<script src="/js/app.js"></script></body></html>
