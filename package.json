@@ -1,15 +1,26 @@
 {
-  "name": "taskaro_updated_plans_notifications_fixed",
+  "name": "taskaro",
   "version": "1.0.0",
-  "description": "Taskaro task management web application",
+  "description": "Taskaro — Smart Task Management & Daily Routine Timetable",
   "main": "Taskaro_Project/server.js",
   "scripts": {
-    "start": "npm start --prefix Taskaro_Project",
+    "postinstall": "npm install --prefix Taskaro_Project",
+    "build": "npm install --prefix Taskaro_Project",
+    "start": "node Taskaro_Project/server.js",
     "dev": "npm run dev --prefix Taskaro_Project",
     "test": "npm test --prefix Taskaro_Project"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "task-manager",
+    "routine",
+    "timetable",
+    "productivity",
+    "streak-tracker"
+  ],
+  "author": "chiku",
   "license": "ISC",
   "type": "commonjs"
 }

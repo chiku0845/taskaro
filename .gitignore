@@ -1,0 +1,10 @@
+node_modules/
+Taskaro_Project/node_modules/
+.env
+Taskaro_Project/.env
+Taskaro_Project/database/sessions.sqlite
+Taskaro_Project/database/*.sqlite-wal
+Taskaro_Project/database/*.sqlite-shm
+Taskaro_Project/database/*.sqlite-journal
+*.log
+.DS_Store
