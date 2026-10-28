@@ -379,5 +379,19 @@
   </div>
 </div>
 
+<!-- Image / Screenshot Lightbox Modal -->
+<div id="imageLightboxModal" class="modal-backdrop hidden" style="background:rgba(0,0,0,0.88);z-index:9999;">
+  <div class="lightbox-container" style="max-width:92vw;max-height:92vh;display:flex;flex-direction:column;align-items:center;position:relative;">
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:0 0 12px;color:#fff;">
+      <h3 id="lightboxTitle" style="margin:0;font-size:15px;color:#fff;font-weight:600">Attachment Preview</h3>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a id="lightboxDownloadBtn" href="#" download class="outline-small" style="background:#ffffff22;color:#fff;border-color:#ffffff44;text-decoration:none;display:inline-flex;align-items:center;gap:6px">⬇ Download</a>
+        <button id="closeLightboxModal" class="icon-btn" style="color:#fff;font-size:26px">×</button>
+      </div>
+    </div>
+    <img id="lightboxImg" src="" alt="Full preview" style="max-width:100%;max-height:80vh;object-fit:contain;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.5)">
+  </div>
+</div>
+
 <div id="notificationPanel" class="notification-panel hidden"><div class="panel-heading"><h3>Notifications</h3><button id="markAllRead" class="text-button">Mark all read</button><button id="closeNotifications" class="icon-btn">×</button></div><div id="notificationItems"></div><form id="broadcastForm" class="broadcast-form"><h4>Admin announcement</h4><input name="title" placeholder="Announcement title" required maxlength="160"><textarea name="message" placeholder="Message to all users" required maxlength="2000"></textarea><button class="outline-small" type="submit">Broadcast to users</button><p class="fine-print">Only the account matching ADMIN_EMAIL in .env can send this.</p></form></div>
 <script src="/js/app.js"></script></body></html>

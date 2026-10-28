@@ -25,11 +25,19 @@ function validateResource(b) {
   if (url && !/^https?:\/\//i.test(url)) {
     throw Error('Resource URL must start with http:// or https://.');
   }
+
+  const fileData = b.file_data ? String(b.file_data) : null;
+  const fileName = b.file_name ? String(b.file_name).slice(0, 255) : null;
+  const fileType = b.file_type ? String(b.file_type).slice(0, 100) : null;
+
   return {
     title,
     url,
     notes: String(b.notes || '').slice(0, 5000),
-    category: String(b.category || 'General').slice(0, 120)
+    category: String(b.category || 'General').slice(0, 120),
+    file_data: fileData,
+    file_name: fileName,
+    file_type: fileType
   };
 }
 
@@ -49,8 +57,8 @@ router.post('/', async (req, res) => {
   try {
     const x = validateResource(req.body);
     const r = await run(
-      'INSERT INTO resources(user_id,title,url,notes,category) VALUES(?,?,?,?,?)',
-      [req.user.id, x.title, x.url, x.notes, x.category]
+      'INSERT INTO resources(user_id,title,url,notes,category,file_data,file_name,file_type) VALUES(?,?,?,?,?,?,?,?)',
+      [req.user.id, x.title, x.url, x.notes, x.category, x.file_data, x.file_name, x.file_type]
     );
     res.status(201).json({ resource: { id: r.id, ...x } });
   } catch (e) {
@@ -62,8 +70,8 @@ router.put('/:id', async (req, res) => {
   try {
     const x = validateResource(req.body);
     const r = await run(
-      'UPDATE resources SET title=?,url=?,notes=?,category=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?',
-      [x.title, x.url, x.notes, x.category, req.params.id, req.user.id]
+      'UPDATE resources SET title=?,url=?,notes=?,category=?,file_data=?,file_name=?,file_type=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?',
+      [x.title, x.url, x.notes, x.category, x.file_data, x.file_name, x.file_type, req.params.id, req.user.id]
     );
     if (!r.changes) return res.status(404).json({ error: 'Resource not found.' });
     res.json({ resource: { id: Number(req.params.id), ...x } });

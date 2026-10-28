@@ -75,10 +75,16 @@ function initDb() {
       url TEXT DEFAULT '',
       notes TEXT DEFAULT '',
       category TEXT DEFAULT 'General',
+      file_data TEXT,
+      file_name TEXT,
+      file_type TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )`);
+    db.run('ALTER TABLE resources ADD COLUMN file_data TEXT', () => {});
+    db.run('ALTER TABLE resources ADD COLUMN file_name TEXT', () => {});
+    db.run('ALTER TABLE resources ADD COLUMN file_type TEXT', () => {});
 
     db.run(`CREATE TABLE IF NOT EXISTS notifications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -1143,41 +1143,207 @@ async function deletePlan(id) {
 }
 
 function resourceForm(r = {}) {
+  const hasFile = Boolean(r?.file_data);
+  const isImg = hasFile && (r.file_type?.startsWith('image/') || r.file_data?.startsWith('data:image/'));
+
   return `<form id="resourceEditor" class="modal-form">
-    <div class="field full-span"><label>Resource title *</label><input name="title" required maxlength="180" value="${esc(
-      r.title || ''
-    )}" placeholder="e.g. JavaScript revision notes"></div>
-    <div class="field full-span"><label>URL (optional)</label><input name="url" type="url" value="${esc(
-      r.url || ''
-    )}" placeholder="https://…"></div>
-    <div class="field full-span"><label>Notes</label><textarea name="notes" maxlength="5000" placeholder="What should you remember?">${esc(
-      r.notes || ''
-    )}</textarea></div>
-    <div class="field full-span"><label>Category</label><input name="category" value="${esc(
-      r.category || 'General'
-    )}"></div>
-    <div class="modal-actions"><button type="button" class="outline-small" data-close-modal>Cancel</button><button class="primary-btn" type="submit">Save resource</button></div>
+    <input type="hidden" name="file_data" id="noteFileData" value="${esc(r.file_data || '')}">
+    <input type="hidden" name="file_name" id="noteFileName" value="${esc(r.file_name || '')}">
+    <input type="hidden" name="file_type" id="noteFileType" value="${esc(r.file_type || '')}">
+
+    <div class="field full-span">
+      <label>Resource / Note Title *</label>
+      <input name="title" required maxlength="180" value="${esc(
+        r.title || ''
+      )}" placeholder="e.g. DSA Revision Notes, Architecture Diagram, Formulae">
+    </div>
+
+    <div class="field">
+      <label>Category</label>
+      <input name="category" value="${esc(r.category || 'General')}" placeholder="e.g. Study, Work, Habit">
+    </div>
+
+    <div class="field">
+      <label>Web Link / URL (optional)</label>
+      <input name="url" type="url" value="${esc(r.url || '')}" placeholder="https://…">
+    </div>
+
+    <div class="field full-span">
+      <label>Notes / Details</label>
+      <textarea name="notes" maxlength="5000" rows="3" placeholder="What key insights, code, or steps should you remember?">${esc(
+        r.notes || ''
+      )}</textarea>
+    </div>
+
+    <!-- Attachment & Screenshot Dropzone Area -->
+    <div class="field full-span note-attachment-section">
+      <label>📎 Attach Image, Screenshot, or File</label>
+      <input type="file" id="noteFileInput" accept="image/*,.pdf,.doc,.docx,.txt" style="display:none">
+      
+      <div id="noteAttachmentBox" class="note-attachment-box">
+        <div id="noteDropzonePrompt" class="${hasFile ? 'hidden' : ''}">
+          <div class="dropzone-inner">
+            <span class="dropzone-icon">📷</span>
+            <div class="dropzone-text">
+              <strong>Attach an image or paste a screenshot</strong>
+              <p class="muted small-text">Click button below, or simply press <kbd>Ctrl + V</kbd> to paste a screenshot!</p>
+            </div>
+            <button type="button" class="outline-small" id="triggerNoteFileInput">📁 Choose Image / File</button>
+          </div>
+        </div>
+
+        <div id="noteAttachmentPreview" class="note-preview-wrapper ${hasFile ? '' : 'hidden'}">
+          ${
+            hasFile
+              ? isImg
+                ? `<div class="preview-img-container">
+                    <img src="${esc(r.file_data)}" alt="Preview" class="preview-thumb">
+                    <div class="preview-meta">
+                      <span class="preview-name">${esc(r.file_name || 'Screenshot')}</span>
+                      <button type="button" class="danger-btn-mini" id="removeNoteAttachmentBtn">✕ Remove</button>
+                    </div>
+                  </div>`
+                : `<div class="preview-file-container">
+                    <span class="file-icon">📄</span>
+                    <span class="preview-name">${esc(r.file_name || 'Attached File')}</span>
+                    <button type="button" class="danger-btn-mini" id="removeNoteAttachmentBtn">✕ Remove</button>
+                  </div>`
+              : ''
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="outline-small" data-close-modal>Cancel</button>
+      <button class="primary-btn" type="submit">Save note</button>
+    </div>
   </form>`;
 }
 
 function newResource(r = null) {
   state.editingResource = r?.id || null;
   openModal(r ? 'Edit note' : 'Add note', resourceForm(r || {}));
+  setupResourceAttachmentHandlers(r);
+}
+
+function setupResourceAttachmentHandlers(r) {
+  const fileInput = $('#noteFileInput');
+  const triggerBtn = $('#triggerNoteFileInput');
+  const previewBox = $('#noteAttachmentPreview');
+  const promptBox = $('#noteDropzonePrompt');
+  const dataInput = $('#noteFileData');
+  const nameInput = $('#noteFileName');
+  const typeInput = $('#noteFileType');
+
+  if (triggerBtn && fileInput) {
+    triggerBtn.onclick = () => fileInput.click();
+  }
+
+  const setAttachment = (dataUrl, fileName, fileType) => {
+    if (dataInput) dataInput.value = dataUrl;
+    if (nameInput) nameInput.value = fileName;
+    if (typeInput) typeInput.value = fileType;
+
+    const isImg = fileType.startsWith('image/') || dataUrl.startsWith('data:image/');
+    if (previewBox) {
+      previewBox.innerHTML = isImg
+        ? `<div class="preview-img-container">
+            <img src="${dataUrl}" alt="Preview" class="preview-thumb">
+            <div class="preview-meta">
+              <span class="preview-name">${esc(fileName)}</span>
+              <button type="button" class="danger-btn-mini" id="removeNoteAttachmentBtn">✕ Remove</button>
+            </div>
+          </div>`
+        : `<div class="preview-file-container">
+            <span class="file-icon">📄</span>
+            <span class="preview-name">${esc(fileName)}</span>
+            <button type="button" class="danger-btn-mini" id="removeNoteAttachmentBtn">✕ Remove</button>
+          </div>`;
+      previewBox.classList.remove('hidden');
+      if (promptBox) promptBox.classList.add('hidden');
+      bindRemoveBtn();
+    }
+  };
+
+  const bindRemoveBtn = () => {
+    const removeBtn = $('#removeNoteAttachmentBtn');
+    if (removeBtn) {
+      removeBtn.onclick = () => {
+        if (dataInput) dataInput.value = '';
+        if (nameInput) nameInput.value = '';
+        if (typeInput) typeInput.value = '';
+        if (fileInput) fileInput.value = '';
+        if (previewBox) {
+          previewBox.innerHTML = '';
+          previewBox.classList.add('hidden');
+        }
+        if (promptBox) promptBox.classList.remove('hidden');
+      };
+    }
+  };
+
+  bindRemoveBtn();
+
+  if (fileInput) {
+    fileInput.onchange = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 15 * 1024 * 1024) {
+        return toast('Attachment size must be under 15MB', true);
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setAttachment(evt.target.result, file.name, file.type || 'application/octet-stream');
+        toast('📎 File attached successfully!');
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+
+  // Paste screenshot directly into the form
+  const form = $('#resourceEditor');
+  if (form) {
+    form.onpaste = (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          if (!blob) continue;
+          const reader = new FileReader();
+          reader.onload = (evt) => {
+            const fileName = `screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}.png`;
+            setAttachment(evt.target.result, fileName, blob.type || 'image/png');
+            toast('📸 Screenshot captured and attached!');
+          };
+          reader.readAsDataURL(blob);
+          break;
+        }
+      }
+    };
+  }
 }
 
 async function saveResource(e) {
   e.preventDefault();
   const f = new FormData(e.target);
-  const payload = Object.fromEntries(
-    ['title', 'url', 'notes', 'category'].map((k) => [k, f.get(k)])
-  );
+  const payload = {
+    title: f.get('title'),
+    url: f.get('url'),
+    notes: f.get('notes'),
+    category: f.get('category'),
+    file_data: f.get('file_data') || null,
+    file_name: f.get('file_name') || null,
+    file_type: f.get('file_type') || null
+  };
   try {
     await api(
       state.editingResource ? `/api/resources/${state.editingResource}` : '/api/resources',
       { method: state.editingResource ? 'PUT' : 'POST', body: JSON.stringify(payload) }
     );
     closeModal();
-    toast('Resource saved.');
+    toast('Note saved successfully!');
     await loadAll();
   } catch (err) {
     toast(err.message, true);
@@ -1189,27 +1355,56 @@ function renderResources() {
   if ($('#resourcesGrid')) {
     $('#resourcesGrid').innerHTML = r.length
       ? r
-          .map(
-            (x) => `<article class="resource-card">
-              <div class="resource-icon">◇</div>
-              <span class="eyebrow">${esc(x.category || 'GENERAL')}</span>
-              <h3>${esc(x.title)}</h3>
-              <p>${esc(x.notes || 'No notes added yet.')}</p>
-              ${
-                x.url
-                  ? `<a class="resource-link" href="${esc(
-                      x.url
-                    )}" target="_blank" rel="noopener noreferrer">${esc(x.url)}</a>`
-                  : ''
+          .map((x) => {
+            const hasFile = Boolean(x.file_data);
+            const isImg =
+              hasFile && (x.file_type?.startsWith('image/') || x.file_data?.startsWith('data:image/'));
+
+            let attachmentHTML = '';
+            if (hasFile) {
+              if (isImg) {
+                attachmentHTML = `
+                  <div class="resource-img-thumb-wrap" data-view-img="${x.id}" title="Click to view full screenshot">
+                    <img src="${esc(x.file_data)}" alt="${esc(x.file_name || x.title)}" class="resource-card-img">
+                    <span class="zoom-pill">🔍 View Screenshot</span>
+                  </div>
+                `;
+              } else {
+                attachmentHTML = `
+                  <div class="resource-file-row">
+                    <a href="${esc(x.file_data)}" download="${esc(x.file_name || 'attachment')}" class="resource-file-link" title="Download attachment">
+                      📄 <span>${esc(x.file_name || 'Attached File')}</span> <small>↓ Download</small>
+                    </a>
+                  </div>
+                `;
               }
-              <div class="resource-actions">
-                <button class="text-button" data-edit-resource="${x.id}">Edit</button>
-                <button class="text-button" data-delete-resource="${x.id}">Delete</button>
-              </div>
-            </article>`
-          )
+            }
+
+            return `
+              <article class="resource-card">
+                <div class="resource-top-row">
+                  <div class="resource-icon">${isImg ? '🖼️' : '◇'}</div>
+                  <span class="eyebrow">${esc(x.category || 'GENERAL')}</span>
+                </div>
+                <h3>${esc(x.title)}</h3>
+                ${attachmentHTML}
+                <p class="resource-notes-text">${esc(x.notes || 'No notes added yet.')}</p>
+                ${
+                  x.url
+                    ? `<a class="resource-link" href="${esc(
+                        x.url
+                      )}" target="_blank" rel="noopener noreferrer">🔗 ${esc(x.url)}</a>`
+                    : ''
+                }
+                <div class="resource-actions">
+                  <button class="text-button" data-edit-resource="${x.id}">Edit</button>
+                  <button class="text-button" data-delete-resource="${x.id}">Delete</button>
+                </div>
+              </article>
+            `;
+          })
           .join('')
-      : empty('Your notes are empty', 'Save a useful note or link to get started.');
+      : empty('Your notes are empty', 'Save a useful note, link, image, or screenshot to get started.');
   }
 }
 
@@ -1297,12 +1492,25 @@ function setView(view) {
   }
 }
 
+function formatBotMessage(text) {
+  if (!text) return '';
+  let safe = esc(text);
+  safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  safe = safe.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  safe = safe.replace(/\n/g, '<br>');
+  return safe;
+}
+
 function addChat(text, who = 'bot') {
   const box = $('#chatMessages');
   if (!box) return;
   const b = document.createElement('div');
   b.className = `chat-bubble ${who}`;
-  b.textContent = text;
+  if (who === 'bot') {
+    b.innerHTML = formatBotMessage(text);
+  } else {
+    b.textContent = text;
+  }
   box.appendChild(b);
   box.scrollTop = box.scrollHeight;
 }
@@ -1739,6 +1947,16 @@ function bind() {
     };
   }
 
+  // Lightbox Modal Controls
+  if ($('#closeLightboxModal')) {
+    $('#closeLightboxModal').onclick = () => $('#imageLightboxModal')?.classList.add('hidden');
+  }
+  if ($('#imageLightboxModal')) {
+    $('#imageLightboxModal').onclick = (e) => {
+      if (e.target === $('#imageLightboxModal')) $('#imageLightboxModal')?.classList.add('hidden');
+    };
+  }
+
   if ($('#closeNotifications')) {
     $('#closeNotifications').onclick = () => $('#notificationPanel')?.classList.add('hidden');
   }
@@ -1888,6 +2106,23 @@ function bind() {
     const d = e.target.closest('[data-detail]');
     if (d) {
       taskDetail(d.dataset.detail);
+      return;
+    }
+
+    // Lightbox image view
+    const viewImg = e.target.closest('[data-view-img]');
+    if (viewImg) {
+      const resId = Number(viewImg.dataset.viewImg);
+      const targetNote = state.resources.find((item) => item.id === resId);
+      if (targetNote && targetNote.file_data) {
+        if ($('#lightboxImg')) $('#lightboxImg').src = targetNote.file_data;
+        if ($('#lightboxTitle')) $('#lightboxTitle').textContent = targetNote.file_name || targetNote.title;
+        if ($('#lightboxDownloadBtn')) {
+          $('#lightboxDownloadBtn').href = targetNote.file_data;
+          $('#lightboxDownloadBtn').download = targetNote.file_name || 'screenshot.png';
+        }
+        $('#imageLightboxModal')?.classList.remove('hidden');
+      }
       return;
     }
 
