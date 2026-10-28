@@ -6,13 +6,13 @@
   <div class="auth-content"><button class="theme-toggle auth-theme" id="themeToggle" aria-label="Toggle theme">☾</button>
     <div id="loginForm" class="auth-form"><h2>Hey !</h2><p class="muted">Sign in to access your taskaro workspace.</p><form id="login"><label>Email address</label><input name="identity" type="email" placeholder="you@example.com" required autocomplete="username"><label>Password</label><div class="password-wrap"><input name="password" id="loginPassword" type="password" placeholder="Enter your password" required autocomplete="current-password"><button type="button" class="show-pass" data-target="loginPassword">Show</button></div><div class="form-row"><label class="check-label"><input type="checkbox" name="remember" checked> Remember me</label><button class="text-button" type="button" id="forgotBtn">Forgot password?</button></div><button class="primary-btn full" type="submit">Sign in</button></form><p class="switch-auth">Don't have an account? <button id="showSignup" class="text-button">Sign up</button></p></div>
     <div id="signupForm" class="auth-form hidden"><h2>Create account</h2><p class="muted">Start building a calmer, clearer workflow.</p><form id="signup"><label>Full name</label><input name="name" placeholder="Your name" required minlength="2" maxlength="100"><label>Email address</label><input name="email" type="email" placeholder="you@example.com" required><label>Password</label><div class="password-wrap"><input name="password" id="signupPassword" type="password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="show-pass" data-target="signupPassword">Show</button></div><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required><p class="fine-print">Create your account with your name, email, and password. No email OTP required.</p><button class="primary-btn full" type="submit">Create account</button></form><p class="switch-auth">Already have an account? <button id="showLogin" class="text-button">Sign in</button></p></div>
-    <div id="forgotForm" class="auth-form hidden"><h2>Reset password</h2><p class="muted">We'll send a secure reset link if your account is eligible.</p><form id="forgot"><label>Email address</label><input name="email" type="email" required placeholder="you@example.com"><button class="primary-btn full" type="submit">Send reset link</button></form><button id="backLogin" class="text-button back-link">← Back to sign in</button></div>
-    <div id="resetForm" class="auth-form hidden"><h2>Choose a new password</h2><form id="reset"><label>New password</label><input name="password" type="password" minlength="8" required autocomplete="new-password"><label>Confirm new password</label><input name="confirmPassword" type="password" minlength="8" required autocomplete="new-password"><button class="primary-btn full" type="submit">Update password</button></form></div>
+    <div id="forgotForm" class="auth-form hidden"><h2>Reset password</h2><p class="muted">Enter your registered email address to reset your password.</p><form id="forgot"><label>Email address</label><input name="email" id="forgotEmail" type="email" required placeholder="you@example.com" autocomplete="email"><button class="primary-btn full" type="submit">Verify &amp; Reset Password</button></form><p class="switch-auth">Remember your password? <button id="backLogin" class="text-button">Sign in</button></p></div>
+    <div id="resetForm" class="auth-form hidden"><h2>Choose a new password</h2><p class="muted">Enter your new password below.</p><form id="reset"><label>New password</label><div class="password-wrap"><input name="password" id="resetPassword" type="password" minlength="8" placeholder="At least 8 characters" required autocomplete="new-password"><button type="button" class="show-pass" data-target="resetPassword">Show</button></div><label>Confirm new password</label><div class="password-wrap"><input name="confirmPassword" id="resetConfirmPassword" type="password" minlength="8" placeholder="Re-enter new password" required autocomplete="new-password"><button type="button" class="show-pass" data-target="resetConfirmPassword">Show</button></div><button class="primary-btn full" type="submit">Update password &amp; Sign in</button></form><button id="cancelReset" class="text-button back-link">← Back to sign in</button></div>
   </div>
 </section>
 <section id="appView" class="app-shell hidden">
   <aside id="sidebar" class="sidebar"><div class="brand"><img class="brand-logo" src="/images/taskaro-logo.png" alt="Taskaro target logo"><span>Taskaro</span></div><div class="workspace-label">WORKSPACE</div><button class="nav-item active" data-view="home"><span>⌂</span> Home</button><button class="nav-item" data-view="tasks"><span>☑</span> My Tasks</button><button class="nav-item" data-view="planner"><span>⏱</span> Time Table</button><button class="nav-item" data-view="resources"><span>◇</span> Notes</button><button class="nav-item" data-view="assistant"><span>✧</span> Ask AI</button><div class="sidebar-bottom"><div class="mini-tip"><span>✦</span><strong>Small steps add up.</strong><p>Keep moving forward, one task at a time.</p></div><button class="nav-item" id="logoutBtn"><span>↪</span> Sign out</button></div></aside>
-  <main class="main-area"><header class="topbar"><button id="menuToggle" class="icon-btn mobile-menu">☰</button><div class="search-global"><span>⌕</span><input id="globalSearch" placeholder="Search your tasks..."><kbd>↵</kbd></div><div class="top-actions"><button id="topAsk" class="ask-btn">✧ <span>Ask AI</span></button><button id="notificationsBtn" class="icon-btn" title="Notifications">♧<i class="notification-dot"></i></button><button id="themeToggleApp" class="icon-btn" title="Toggle theme">☾</button><div class="user-menu"><span id="avatar" class="avatar">U</span><span id="userName">User</span><button id="profileMenu" class="icon-btn small">⌄</button><div id="profileDropdown" class="dropdown hidden"><button id="profileLogout">Sign out</button></div></div></div></header>
+  <main class="main-area"><header class="topbar"><button id="menuToggle" class="icon-btn mobile-menu">☰</button><div class="search-global"><span>⌕</span><input id="globalSearch" placeholder="Search your tasks..."><kbd>↵</kbd></div><div class="top-actions"><button id="topAsk" class="ask-btn">✧ <span>Ask AI</span></button><button id="notificationsBtn" class="icon-btn" title="Notifications">♧<i class="notification-dot"></i></button><button id="themeToggleApp" class="icon-btn" title="Toggle theme">☾</button><div class="user-menu"><span id="avatar" class="avatar">U</span><span id="userName">User</span><button id="profileMenu" class="icon-btn small">⌄</button><div id="profileDropdown" class="dropdown hidden"><button id="openChangePassBtn" type="button">Change password</button><button id="profileLogout" type="button">Sign out</button></div></div></div></header>
     <div class="page-content">
       <section id="view-home" class="view"><div class="page-heading"><div><p class="eyebrow">YOUR WORKSPACE</p><h1 id="greeting">Good evening</h1><p class="muted">A little progress each day adds up to big results.</p></div><div class="heading-actions"><button class="outline-btn" data-goto="planner">⏱ Daily Routine</button><button class="primary-btn" id="addTaskTop">＋ New task</button></div></div>
         <div class="stats-grid"><article class="stat-card total"><div class="stat-top"><span>Total tasks</span><span class="stat-icon">▤</span></div><strong id="statTotal">0</strong><small>All your tasks</small></article><article class="stat-card pending"><div class="stat-top"><span>Pending</span><span class="stat-icon">◷</span></div><strong id="statPending">0</strong><small>Waiting to begin</small></article><article class="stat-card completed"><div class="stat-top"><span>Completed</span><span class="stat-icon">✓</span></div><strong id="statCompleted">0</strong><small>Nicely done</small></article><article class="stat-card overdue"><div class="stat-top"><span>Overdue</span><span class="stat-icon">!</span></div><strong id="statOverdue">0</strong><small>Needs attention</small></article></div>
@@ -339,6 +339,43 @@
       <input type="text" id="taskPickerSearch" placeholder="Search tasks by title or category..." class="task-picker-search">
       <div id="taskPickerItems" class="task-picker-items"></div>
     </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePassModal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:440px">
+    <div class="modal-heading">
+      <h2>Change Password</h2>
+      <button id="closeChangePassModal" class="icon-btn">×</button>
+    </div>
+    <form id="changePassForm" class="modal-form">
+      <div class="field full-span">
+        <label>Current Password *</label>
+        <div class="password-wrap">
+          <input name="currentPassword" id="currentPassInput" type="password" required placeholder="Enter current password">
+          <button type="button" class="show-pass" data-target="currentPassInput">Show</button>
+        </div>
+      </div>
+      <div class="field full-span">
+        <label>New Password * (min. 8 characters)</label>
+        <div class="password-wrap">
+          <input name="newPassword" id="newPassInput" type="password" minlength="8" required placeholder="At least 8 characters">
+          <button type="button" class="show-pass" data-target="newPassInput">Show</button>
+        </div>
+      </div>
+      <div class="field full-span">
+        <label>Confirm New Password *</label>
+        <div class="password-wrap">
+          <input name="confirmPassword" id="confirmPassInput" type="password" minlength="8" required placeholder="Confirm new password">
+          <button type="button" class="show-pass" data-target="confirmPassInput">Show</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="outline-small" id="cancelChangePassModal">Cancel</button>
+        <button type="submit" class="primary-btn">Save New Password</button>
+      </div>
+    </form>
   </div>
 </div>
 

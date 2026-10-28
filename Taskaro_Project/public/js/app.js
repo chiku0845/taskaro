@@ -730,6 +730,21 @@ function renderRoutineChecklist() {
     .join('');
 }
 
+function planOccursOn(p, targetDateStr) {
+  if (!p) return false;
+  if (p.repeat === 'once') return p.date === targetDateStr;
+  const base = new Date(p.date + 'T12:00:00');
+  const target = new Date(targetDateStr + 'T12:00:00');
+  const daysDiff = Math.round((target - base) / 86400000);
+  if (daysDiff < 0) return false;
+  const dayOfWeek = target.getDay(); // 0 = Sun, 6 = Sat
+  if (p.repeat === 'daily') return true;
+  if (p.repeat === 'weekdays') return dayOfWeek >= 1 && dayOfWeek <= 5;
+  if (p.repeat === 'weekends') return dayOfWeek === 0 || dayOfWeek === 6;
+  if (p.repeat === 'weekly') return dayOfWeek === base.getDay();
+  return false;
+}
+
 function renderWeeklyCalendar() {
   const start = new Date();
   start.setDate(start.getDate() - ((start.getDay() + 6) % 7) + state.weekOffset * 7);
@@ -753,7 +768,7 @@ function renderWeeklyCalendar() {
     d.setDate(start.getDate() + i);
     const iso = localISO(d);
     const ts = state.tasks.filter((t) => t.due_date === iso);
-    const ps = state.plans.filter((p) => p.date === iso || p.repeat === 'daily');
+    const ps = state.plans.filter((p) => planOccursOn(p, iso));
 
     days += `<div class="day-column ${iso === localISO(new Date()) ? 'today' : ''}">
       <div class="day-name">${d.toLocaleDateString(undefined, { weekday: 'short' })}</div>
@@ -1341,7 +1356,11 @@ function bind() {
       try {
         const r = await api('/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ identity: f.get('identity'), password: f.get('password') })
+          body: JSON.stringify({
+            identity: f.get('identity'),
+            password: f.get('password'),
+            remember: f.get('remember') === 'on'
+          })
         });
         state.user = r.user;
         showApp();
@@ -1382,8 +1401,15 @@ function bind() {
           method: 'POST',
           body: JSON.stringify({ email })
         });
-        toast(r.message);
-        showAuth('loginForm');
+        if (r.resetToken) {
+          state.resetToken = r.resetToken;
+          showAuth('resetForm');
+          toast(r.message || 'Account verified! Enter your new password.');
+          if ($('#resetPassword')) $('#resetPassword').focus();
+        } else {
+          toast(r.message || 'Password reset instructions sent.');
+          showAuth('loginForm');
+        }
       } catch (err) {
         toast(err.message, true);
       }
@@ -1400,17 +1426,36 @@ function bind() {
         if (password !== confirmPassword) {
           return toast('Passwords do not match.', true);
         }
+        if (!password || password.length < 8) {
+          return toast('Password must be at least 8 characters.', true);
+        }
+        if (!state.resetToken) {
+          return toast('Reset token missing. Please request a new reset.', true);
+        }
         const r = await api('/auth/reset-password', {
           method: 'POST',
-          body: JSON.stringify({ token: state.resetToken, password })
+          body: JSON.stringify({ token: state.resetToken, password, confirmPassword })
         });
         history.replaceState({}, '', location.pathname);
-        toast(r.message);
         state.resetToken = null;
-        showAuth('loginForm');
+        if (r.user) {
+          state.user = r.user;
+          showApp();
+          toast(r.message || 'Password updated! Welcome back.');
+        } else {
+          showAuth('loginForm');
+          toast(r.message || 'Password updated. You can now sign in.');
+        }
       } catch (err) {
         toast(err.message, true);
       }
+    };
+  }
+
+  if ($('#cancelReset')) {
+    $('#cancelReset').onclick = () => {
+      state.resetToken = null;
+      showAuth('loginForm');
     };
   }
 
@@ -1420,6 +1465,11 @@ function bind() {
     } catch {}
     state.user = null;
     state.tasks = [];
+    state.plans = [];
+    state.resources = [];
+    state.notifications = [];
+    state.skipDays = [];
+    state.planPerformance = null;
     showAuth('loginForm');
     toast('You have signed out.');
   };
@@ -1428,6 +1478,46 @@ function bind() {
   if ($('#profileLogout')) $('#profileLogout').onclick = logout;
   if ($('#profileMenu')) {
     $('#profileMenu').onclick = () => $('#profileDropdown')?.classList.toggle('hidden');
+  }
+
+  if ($('#openChangePassBtn')) {
+    $('#openChangePassBtn').onclick = () => {
+      $('#profileDropdown')?.classList.add('hidden');
+      $('#changePassForm')?.reset();
+      $('#changePassModal')?.classList.remove('hidden');
+    };
+  }
+  if ($('#closeChangePassModal')) {
+    $('#closeChangePassModal').onclick = () => $('#changePassModal')?.classList.add('hidden');
+  }
+  if ($('#cancelChangePassModal')) {
+    $('#cancelChangePassModal').onclick = () => $('#changePassModal')?.classList.add('hidden');
+  }
+  if ($('#changePassForm')) {
+    $('#changePassForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const currentPassword = f.get('currentPassword');
+      const newPassword = f.get('newPassword');
+      const confirmPassword = f.get('confirmPassword');
+      if (newPassword !== confirmPassword) {
+        return toast('New passwords do not match.', true);
+      }
+      if (!newPassword || newPassword.length < 8) {
+        return toast('New password must be at least 8 characters.', true);
+      }
+      try {
+        const r = await api('/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+        });
+        toast(r.message || 'Password changed successfully!');
+        $('#changePassModal')?.classList.add('hidden');
+        e.target.reset();
+      } catch (err) {
+        toast(err.message, true);
+      }
+    };
   }
 
   if ($('#menuToggle')) {
