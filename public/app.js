@@ -107,22 +107,6 @@ function showApp() {
   loadAllData();
 }
 
-function switchToUserView() {
-  document.getElementById('adminShell').style.display = 'none';
-  document.getElementById('userShell').style.display = 'flex';
-  const backBtn = document.getElementById('adminBackBtn');
-  if (backBtn) backBtn.style.display = 'inline-flex';
-  updateGreeting();
-  navigateToTab('home');
-  showToast('Switched to User preview mode', 'info');
-}
-
-function switchToAdminPortal() {
-  document.getElementById('userShell').style.display = 'none';
-  document.getElementById('adminShell').style.display = 'flex';
-  navigateToTab('admin-dashboard');
-}
-
 function updateGreeting() {
   const greetingEl = document.getElementById('welcomeGreeting');
   if (!greetingEl) return;
@@ -303,7 +287,7 @@ function navigateToTab(tabName) {
       'admin-reports': 'Team Analytics & Reports',
       'admin-messages': 'Team Communications',
       'admin-logs': 'Security & Activity Logs',
-      'admin-ai': 'Admin AI Assistant'
+      'admin-ai': 'Ask AI'
     };
     breadcrumb.textContent = titles[tabName] || 'Admin Console';
   }
