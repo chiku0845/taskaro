@@ -1,944 +1,1443 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#2449e8"><title>TaskMind — Plan with clarity</title><link rel="stylesheet" href="/css/styles.css"></head>
-<body><div id="toast" class="toast" role="status"></div>
-<section id="authView" class="auth-shell">
-  <div class="welcome-panel"><div class="orb orb-one"></div><div class="orb orb-two"></div><div class="welcome-copy"><div class="brand"><img class="brand-logo" src="/images/taskaro-logo.png" alt="TaskMind logo"><span>TaskMind</span></div><p class="eyebrow">YOUR DAY, IN CONTROL</p><h1>WELCOME</h1><br><h2>TO TASK MANAGEMENT</h2><p>Plan your projects, focus on the right tasks, and make progress one clear step at a time.</p><div class="welcome-pills"><span>✓ Smart priorities</span><span>◷ Deadline tracking</span></div></div></div>
-  <div class="auth-content"><button class="theme-toggle auth-theme" id="themeToggle" aria-label="Toggle theme">☾</button>
-    <div id="loginForm" class="auth-form"><h2>Hey !</h2><p class="muted">Sign in to access your TaskMind workspace.</p><form id="login"><label>Email address</label><input name="identity" type="email" placeholder="you@example.com" required autocomplete="username"><label>Password</label><div class="password-wrap"><input name="password" id="loginPassword" type="password" placeholder="Enter your password" required autocomplete="current-password"><button type="button" class="show-pass" data-target="loginPassword">Show</button></div><div class="form-row"><label class="check-label"><input type="checkbox" name="remember" checked> Remember me</label><button class="text-button" type="button" id="forgotBtn">Forgot password?</button></div><button class="primary-btn full" type="submit">Sign in</button></form><p class="switch-auth">Don't have an account? <button id="showSignup" class="text-button">Sign up</button></p></div>
-    <div id="signupForm" class="auth-form hidden"><h2>Create account</h2><p class="muted">Start building a calmer, clearer workflow.</p><form id="signup"><label>Full name</label><input name="name" placeholder="Your name" required minlength="2" maxlength="100"><label>Email address</label><input name="email" type="email" placeholder="you@example.com" required><label>Password</label><div class="password-wrap"><input name="password" id="signupPassword" type="password" minlength="8" placeholder="At least 8 characters" required><button type="button" class="show-pass" data-target="signupPassword">Show</button></div><label>Confirm password</label><input name="confirmPassword" type="password" minlength="8" required><p class="fine-print">Create your account with your name, email, and password. No email OTP required.</p><button class="primary-btn full" type="submit">Create account</button></form><p class="switch-auth">Already have an account? <button id="showLogin" class="text-button">Sign in</button></p></div>
-    <div id="forgotForm" class="auth-form hidden"><h2>Reset password</h2><p class="muted">We'll send a secure reset link if your account is eligible.</p><form id="forgot"><label>Email address</label><input name="email" type="email" required placeholder="you@example.com"><button class="primary-btn full" type="submit">Send reset link</button></form><button id="backLogin" class="text-button back-link">← Back to sign in</button></div>
-    <div id="resetForm" class="auth-form hidden"><h2>Choose a new password</h2><form id="reset"><label>New password</label><input name="password" type="password" minlength="8" required autocomplete="new-password"><label>Confirm new password</label><input name="confirmPassword" type="password" minlength="8" required autocomplete="new-password"><button class="primary-btn full" type="submit">Update password</button></form></div>
-  </div>
-</section>
-<section id="appView" class="app-shell hidden">
-  <aside id="sidebar" class="sidebar">
-    <div class="brand"><img class="brand-logo" src="/images/taskaro-logo.png" alt="TaskMind logo"><span>TaskMind</span></div>
-    <div class="workspace-label">WORKSPACE</div>
-    <button class="nav-item active" data-view="home">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="18" rx="2"/>
-          <rect x="14" y="3" width="7" height="7" rx="2"/>
-          <rect x="14" y="14" width="7" height="7" rx="2"/>
-        </svg>
-      </span>
-      Home
-    </button>
-    <button class="nav-item" data-view="tasks">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="5"/>
-          <path d="m8.5 12 2.5 2.5 5-5"/>
-        </svg>
-      </span>
-      My Tasks
-    </button>
-    <button class="nav-item" data-view="planner">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="17" rx="3.5"/>
-          <line x1="16" y1="2" x2="16" y2="5"/>
-          <line x1="8" y1="2" x2="8" y2="5"/>
-          <line x1="3" y1="9" x2="21" y2="9"/>
-          <path d="M7 13h4M7 16h7"/>
-        </svg>
-      </span>
-      Time Table
-    </button>
-    <button class="nav-item" data-view="exam-plans">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="2" x2="12" y2="22"/>
-          <path d="M12 4h7a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7"/>
-          <path d="M12 11H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h7"/>
-        </svg>
-      </span>
-      Exam Plans
-    </button>
-    <button class="nav-item" data-view="resources">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="3" width="16" height="18" rx="3"/>
-          <path d="M10 8h7M10 12h7M10 16h4"/>
-          <path d="M3 6h4M3 10h4M3 14h4M3 18h4"/>
-        </svg>
-      </span>
-      Notes
-    </button>
-    <button class="nav-item" data-view="assistant">
-      <span class="nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 14a3 3 0 0 1-3 3H7l-4 4V5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3z"/>
-          <circle cx="8.5" cy="9.5" r="1.2" fill="currentColor"/>
-          <circle cx="12" cy="9.5" r="1.2" fill="currentColor"/>
-          <circle cx="15.5" cy="9.5" r="1.2" fill="currentColor"/>
-        </svg>
-      </span>
-      Ask AI
-    </button>
-    <div class="sidebar-bottom">
-      <div class="mini-tip">
-        <span>✦</span><strong>Small steps add up.</strong>
-        <p>Keep moving forward, one task at a time.</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskaro - Productivity & Task Management</title>
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Chart.js for analytics & graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ========================================================
+       AUTH SECTION (Login / Sign Up) - Matches Screenshot Image 1
+       ======================================================== -->
+  <div id="authView" class="auth-wrapper" style="display: none;">
+    <!-- Left Hero Panel (Matches Image 1) -->
+    <div class="auth-hero-container">
+      <div class="auth-bubble-1"></div>
+      <div class="auth-bubble-2"></div>
+
+      <!-- Top Brand Logo (Clean White Logo, No white background board) -->
+      <div class="auth-logo-badge">
+        <img src="logo-white.svg" alt="Taskaro Logo" class="brand-logo-hero">
       </div>
-      <button class="nav-item" id="logoutBtn">
-        <span class="nav-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </span>
-        Sign out
-      </button>
+
+      <!-- Hero Message (Exact match with Image 1 head content) -->
+      <div class="auth-hero-content">
+        <h1 class="auth-hero-title">WELCOME</h1>
+        <div class="auth-hero-title-sub">TO TASK MANAGEMENT</div>
+        <p class="auth-hero-desc">
+          Plan your projects, focus on the right tasks, and make progress one clear step at a time.
+        </p>
+
+        <!-- Feature Pills (Matching Image 1: Smart Planning, Daily Routine, Track Progress) -->
+        <div class="auth-hero-pills">
+          <div class="auth-pill">
+            <span>✓</span> Smart Planning
+          </div>
+          <div class="auth-pill">
+            <span>📅</span> Daily Routine
+          </div>
+          <div class="auth-pill">
+            <span>📊</span> Track Progress
+          </div>
+        </div>
+
+        <!-- Tagline: Under Smart Planning / Daily Routine -->
+        <div class="auth-hero-tagline-bottom">
+          YOUR DAY, IN CONTROL
+        </div>
+      </div>
+
+      <!-- Desk Illustration (Laptop, Plant, Coffee & Better Planning Bigger Goals) -->
+      <div class="auth-hero-illustration">
+        <svg viewBox="0 0 460 160" width="100%" height="150" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Desk Surface Line -->
+          <line x1="10" y1="140" x2="450" y2="140" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Potted Plant on Left -->
+          <path d="M40 140 L35 115 L55 115 L50 140 Z" fill="rgba(255,255,255,0.85)"/>
+          <path d="M33 115 L57 115" stroke="rgba(255,255,255,0.9)" stroke-width="3" stroke-linecap="round"/>
+          <path d="M45 115 C45 95 30 90 25 75 C38 80 43 95 45 115 Z" fill="rgba(191,219,254,0.9)"/>
+          <path d="M45 115 C47 90 60 85 65 72 C55 78 48 95 45 115 Z" fill="rgba(147,197,253,0.9)"/>
+          <path d="M45 115 C45 80 40 70 45 55 C48 70 47 90 45 115 Z" fill="rgba(219,234,254,0.95)"/>
+
+          <!-- Open Laptop in Center -->
+          <rect x="90" y="35" width="160" height="98" rx="8" fill="#ffffff" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+          <rect x="96" y="41" width="148" height="86" rx="4" fill="#eff6ff"/>
+          <!-- Checklist Items on Screen -->
+          <path d="M112 58 L116 62 L124 54" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="132" y="56" width="95" height="5" rx="2.5" fill="#93c5fd"/>
+          
+          <path d="M112 76 L116 80 L124 72" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="132" y="74" width="80" height="5" rx="2.5" fill="#93c5fd"/>
+
+          <path d="M112 94 L116 98 L124 90" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="132" y="92" width="65" height="5" rx="2.5" fill="#93c5fd"/>
+
+          <!-- Laptop Base / Keyboard -->
+          <path d="M72 133 L268 133 L256 140 L84 140 Z" fill="rgba(255,255,255,0.9)"/>
+          <rect x="150" y="134" width="40" height="3" rx="1.5" fill="#cbd5e1"/>
+
+          <!-- Coffee Mug with Rising Steam -->
+          <rect x="290" y="105" width="34" height="35" rx="6" fill="#ffffff"/>
+          <path d="M324 113 C332 113 336 118 336 123 C336 128 332 133 324 133" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <path d="M298 98 C296 92 300 88 298 82" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M307 96 C305 90 309 86 307 80" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" fill="none"/>
+          <path d="M316 98 C314 92 318 88 316 82" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+          <!-- Angled Text "Better Planning Bigger Goals" (Matching Image 1) -->
+          <g transform="rotate(-6 385 85)">
+            <text x="355" y="75" fill="#ffffff" font-family="'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="14" font-style="italic">Better Planning</text>
+            <text x="365" y="94" fill="rgba(255,255,255,0.92)" font-family="'Segoe UI', Roboto, sans-serif" font-weight="700" font-size="14" font-style="italic">Bigger Goals</text>
+          </g>
+        </svg>
+      </div>
     </div>
-  </aside>
-  <main class="main-area"><header class="topbar"><button id="menuToggle" class="icon-btn mobile-menu">☰</button><div class="search-global"><span>⌕</span><input id="globalSearch" placeholder="Search your tasks..."><kbd>↵</kbd></div><div class="top-actions"><button id="topAsk" class="ask-btn">✧ <span>Ask AI</span></button><button id="notificationsBtn" class="icon-btn" title="Notifications">♧<i class="notification-dot"></i></button><button id="themeToggleApp" class="icon-btn" title="Toggle theme">☾</button><div class="user-menu"><span id="avatar" class="avatar">U</span><span id="userName">User</span><button id="profileMenu" class="icon-btn small">⌄</button><div id="profileDropdown" class="dropdown hidden"><button id="profileLogout">Sign out</button></div></div></div></header>
-    <div class="page-content">
-      <section id="view-home" class="view"><div class="page-heading"><div><p class="eyebrow">YOUR WORKSPACE</p><h1 id="greeting">Good evening</h1><p class="muted">A little progress each day adds up to big results.</p></div><div class="heading-actions"><button class="outline-btn" data-goto="exam-plans">🎯 Exam Roadmaps</button><button class="outline-btn" data-goto="planner">⏱ Daily Routine</button><button class="primary-btn" id="addTaskTop">＋ New task</button></div></div>
-        <div class="stats-grid"><article class="stat-card total"><div class="stat-top"><span>Total tasks</span><span class="stat-icon">▤</span></div><strong id="statTotal">0</strong><small>All your tasks</small></article><article class="stat-card pending"><div class="stat-top"><span>Pending</span><span class="stat-icon">◷</span></div><strong id="statPending">0</strong><small>Waiting to begin</small></article><article class="stat-card in-progress"><div class="stat-top"><span>In Progress</span><span class="stat-icon">⚡</span></div><strong id="statInProgress">0</strong><small>Actively working</small></article><article class="stat-card completed"><div class="stat-top"><span>Completed</span><span class="stat-icon">✓</span></div><strong id="statCompleted">0</strong><small>Nicely done</small></article><article class="stat-card overdue"><div class="stat-top"><span>Overdue</span><span class="stat-icon">!</span></div><strong id="statOverdue">0</strong><small>Needs attention</small></article></div>
 
-        <!-- Active Exam / Long-Term Target Glance Widget -->
-        <article class="panel home-exam-panel" id="homeExamWidget" style="margin-bottom:22px">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">TARGET &amp; EXAM ROADMAP</p>
-              <h2>Active Exam / Goal Prep</h2>
-            </div>
-            <button class="text-button" data-goto="exam-plans">Open Roadmaps →</button>
-          </div>
-          <div id="homeExamContent">
-            <!-- Populated by app.js -->
-          </div>
-        </article>
+    <!-- Right Form Panel -->
+    <div class="auth-form-container">
+      <!-- Dark/Light Theme Toggle -->
+      <div class="auth-top-actions">
+        <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle theme">
+          <span id="themeIcon" class="theme-toggle-icon">🌙</span>
+        </button>
+      </div>
 
-        <!-- Today's Daily Routine & Performance Glance Widget -->
-        <article class="panel home-routine-panel" style="margin-bottom:22px">
-          <div class="panel-heading">
-            <div>
-              <p class="eyebrow">DAILY ROUTINE &amp; PERFORMANCE</p>
-              <h2>Today's Routine</h2>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <span class="focus-badge" id="homeRoutineStatusBadge">In Progress</span>
-              <button class="text-button" data-goto="planner">Open Time Table →</button>
-            </div>
-          </div>
-          <div class="home-routine-content">
-            <div class="home-routine-stats">
-              <div class="routine-mini-progress">
-                <span class="routine-mini-pct" id="homeRoutinePct">0%</span>
-                <span class="muted small-text">done</span>
-              </div>
-              <div class="home-routine-bar-wrap">
-                <div class="home-routine-bar" id="homeRoutineProgressBar" style="width:0%"></div>
-              </div>
-              <div class="home-routine-counts">
-                <span>🔥 Streak: <b id="homeRoutineStreak">0 days</b></span> •
-                <span>Done: <b id="homeRoutineDoneCount">0</b></span> •
-                <span>Remaining: <b id="homeRoutinePendingCount">0</b></span>
-              </div>
-            </div>
-            <div id="homeRoutineItems" class="home-routine-checklist"></div>
-          </div>
-        </article>
-
-        <div class="dashboard-grid"><article class="panel priority-panel"><div class="panel-heading"><div><p class="eyebrow">FOCUS FINDER</p><h2>Priority focus</h2></div><span class="focus-badge">✦ Focus</span></div><div id="priorityFocus" class="priority-focus"><div class="empty-icon">✦</div><h3>You're all caught up</h3><p class="muted">Add a task and your next focus will appear here.</p></div></article>
-          <article class="panel progress-panel"><div class="panel-heading"><div><p class="eyebrow">YOUR MOMENTUM</p><h2>Task progress</h2></div><span class="muted small-text">Overall</span></div><div class="progress-main"><div id="progressRing" class="progress-ring"><div><strong id="completionPct">0%</strong><small>complete</small></div></div><div class="progress-legend"><div><span class="legend-dot green"></span><span>Completed</span><b id="legendCompleted">0</b></div><div><span class="legend-dot yellow"></span><span>Pending</span><b id="legendPending">0</b></div><div><span class="legend-dot blue"></span><span>In progress</span><b id="legendProgress">0</b></div></div></div><div class="progress-track"><span id="progressBar"></span></div></article></div>
-        <article class="panel recent-panel"><div class="panel-heading"><div><p class="eyebrow">KEEP IT MOVING</p><h2>Upcoming tasks</h2></div><button class="text-button" data-goto="tasks">View all →</button></div><div id="recentTasks" class="task-list"></div></article>
-      </section>
-      <section id="view-tasks" class="view hidden">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">STAY ORGANIZED</p>
-            <h1>My Tasks</h1>
-            <p class="muted">Everything you need to do, in one place.</p>
-          </div>
-          <div class="heading-actions">
-            <button type="button" class="outline-btn" id="openSmartSchedulerBtn" title="Select best tasks according to available time">⚡ Smart Scheduler</button>
-            <button type="button" class="outline-btn" id="openCriticalPathBtn" title="Compute longest dependent chain &amp; slack">📊 Critical Path</button>
-            <button type="button" class="outline-btn" id="clearAllTasksBtn" style="color:var(--red);border-color:var(--red)" title="Clear all tasks">🗑 Clear All</button>
-            <button class="primary-btn" id="addTask">＋ New task</button>
-          </div>
+      <div class="auth-card">
+        <!-- Portal Role Selector (User vs Admin Login on the same PC) -->
+        <div class="auth-role-tabs">
+          <button id="tabRoleUser" class="auth-role-tab active" onclick="switchPortalRole('user')">
+            👤 User Login
+          </button>
+          <button id="tabRoleAdmin" class="auth-role-tab" onclick="switchPortalRole('admin')">
+            🛡️ Admin Login
+          </button>
         </div>
 
-        <!-- Task List Tabs -->
-        <div class="task-tabs-container">
-          <button type="button" class="task-tab-btn active" data-task-tab="">All Tasks (<span id="tabCountAll">0</span>)</button>
-          <button type="button" class="task-tab-btn" data-task-tab="Pending">Pending (<span id="tabCountPending">0</span>)</button>
-          <button type="button" class="task-tab-btn" data-task-tab="In Progress">In Progress (<span id="tabCountProgress">0</span>)</button>
-          <button type="button" class="task-tab-btn" data-task-tab="Completed">Completed (<span id="tabCountCompleted">0</span>)</button>
-          <button type="button" class="task-tab-btn" data-task-tab="Overdue">Overdue (<span id="tabCountOverdue">0</span>)</button>
-          <button type="button" class="task-tab-btn" data-task-tab="dependencies">🔗 Dependencies &amp; Critical Path</button>
+        <!-- Mode Toggle Header: Sign In (Default) or Sign Up -->
+        <div class="auth-header">
+          <h2 id="authFormTitle" class="auth-heading">Welcome Back</h2>
+          <p id="authFormSubtitle" class="auth-subheading">Sign in to your account and continue your journey.</p>
         </div>
 
-        <div class="panel filters-panel">
-          <div class="filters">
-            <div class="search-input-wrap">
-              <input id="taskSearch" placeholder="Search title or description…" autocomplete="off">
-              <div id="searchAutocompleteDropdown" class="autocomplete-dropdown hidden"></div>
-            </div>
-            <select id="statusFilter">
-              <option value="">All statuses</option>
-              <option>Pending</option>
-              <option>In Progress</option>
-              <option>Completed</option>
-              <option>Overdue</option>
-            </select>
-            <select id="priorityFilter">
-              <option value="">All priorities</option>
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
-            </select>
-            <select id="categoryFilter">
-              <option value="">All categories</option>
-            </select>
-            <select id="sortFilter">
-              <option value="deadline">Deadline</option>
-              <option value="priority">Priority</option>
-              <option value="effort">Effort (1-5)</option>
-              <option value="created">Recently created</option>
-              <option value="alphabetical">Alphabetical</option>
-            </select>
-            <button id="clearFilters" class="outline-small">Clear</button>
-          </div>
-        </div>
-
-        <!-- Standard Tasks List -->
-        <div id="allTasks" class="task-list full-task-list"></div>
-
-        <!-- Dependency & Critical Path Live View (Active when tab is selected) -->
-        <div id="dependencyView" class="dependency-view hidden">
-          <div class="cpm-overview-banner">
-            <div class="cpm-banner-main">
-              <span class="cpm-badge">CRITICAL PATH ANALYSIS</span>
-              <h3 id="depSummaryTitle">Calculating dependencies...</h3>
-              <p class="muted" id="depSummaryDesc">Topological arrangement based on task prerequisites.</p>
-            </div>
-            <button type="button" class="primary-btn" id="viewFullCpmBtn">View Full CPM Table →</button>
-          </div>
-          <div class="dependency-columns">
-            <div class="dependency-col">
-              <div class="col-header ready">
-                <h3>✓ Ready to Execute (<span id="readyCount">0</span>)</h3>
-                <small class="muted">No unfulfilled prerequisites</small>
-              </div>
-              <div id="readyTasksList" class="dep-tasks-list"></div>
-            </div>
-            <div class="dependency-col">
-              <div class="col-header blocked">
-                <h3>🔒 Blocked by Prerequisites (<span id="blockedCount">0</span>)</h3>
-                <small class="muted">Waiting for prior tasks to finish</small>
-              </div>
-              <div id="blockedTasksList" class="dep-tasks-list"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section id="view-planner" class="view hidden">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">DAILY ROUTINE &amp; PERFORMANCE</p>
-            <h1>Time Table &amp; Daily Routine</h1>
-            <p class="muted">Structure your habits, tick off completed tasks, track weekly performance graphs, and set dynamic rest days.</p>
-          </div>
-          <div class="heading-actions">
-            <button type="button" class="outline-btn skip-day-btn" id="toggleSkipDayBtn" title="Set or remove a rest/skip day">🌴 Rest / Skip Day</button>
-            <button type="button" class="outline-btn" id="openTaskPickerBtn" title="Select an existing task to schedule into your timetable">📋 Add From Tasks</button>
-            <button type="button" class="primary-btn" id="plannerAdd">＋ Add Routine</button>
-          </div>
-        </div>
-
-        <!-- Dynamic Rest / Skip Day Banner -->
-        <div id="skipDayBanner" class="skip-day-banner hidden">
-          <div class="skip-banner-content">
-            <span class="skip-banner-icon">🌴</span>
-            <div>
-              <strong id="skipBannerTitle">Rest / Skip Day Active</strong>
-              <p id="skipBannerDesc">Daily routine requirements are paused today. Your consistency streak is protected!</p>
-            </div>
-          </div>
-          <button type="button" class="outline-small" id="removeSkipDayBtn">Resume Routine</button>
-        </div>
-
-        <!-- 3-Card Performance Dashboard & Visual Graph -->
-        <div class="routine-performance-grid">
-          <div class="routine-perf-card">
-            <div class="perf-header">
-              <h3>Today's Progress</h3>
-              <span class="perf-pill" id="todayPerfPill">In Progress</span>
-            </div>
-            <div class="progress-body">
-              <div class="progress-radial" id="routineRadial" style="--pct:0%">
-                <div class="progress-radial-inner">
-                  <strong id="routineRadialPct">0%</strong>
-                  <small>Done</small>
-                </div>
-              </div>
-              <div class="progress-stats-list">
-                <div class="stat-line"><span><span class="dot green"></span>Completed</span><b id="routineCompletedCount">0</b></div>
-                <div class="stat-line"><span><span class="dot orange"></span>Skipped</span><b id="routineSkippedCount">0</b></div>
-                <div class="stat-line"><span><span class="dot slate"></span>Pending</span><b id="routinePendingCount">0</b></div>
-              </div>
-            </div>
+        <!-- AUTH FORM -->
+        <form id="authForm" onsubmit="handleAuthSubmit(event)">
+          <!-- Full Name (Sign Up only) -->
+          <div class="form-group signup-only">
+            <label class="form-label">Full name</label>
+            <input type="text" id="authName" class="form-input" placeholder="Your name" autocomplete="name">
           </div>
 
-          <div class="routine-perf-card">
-            <div class="perf-header">
-              <h3>Consistency &amp; Streaks</h3>
-              <span class="perf-pill success" id="routineStreakBadge">Active</span>
+          <!-- Age & Gender (Sign Up only) -->
+          <div class="signup-only signup-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Age</label>
+              <input type="number" id="authAge" class="form-input" placeholder="e.g. 21" min="10" max="100">
             </div>
-            <div class="streak-display">
-              <span class="streak-flame">🔥</span>
-              <span class="streak-num" id="routineStreakNum">0</span>
-              <span class="muted" style="font-size:16px;font-weight:600">Days</span>
-            </div>
-            <div class="streak-meta">
-              <span>Weekly Score: <b id="routineWeeklyScore">0%</b></span> •
-              <span>Total Done: <b id="routineTotalDone">0</b></span>
-            </div>
-            <div class="streak-tags">
-              <span class="streak-badge">🌴 Protected on rest days</span>
-              <span class="streak-badge">⚡ Daily Momentum</span>
-            </div>
-          </div>
-
-          <div class="routine-perf-card">
-            <div class="perf-header">
-              <h3>7-Day Performance Trend</h3>
-              <span class="muted small-text">Target: 80%</span>
-            </div>
-            <div class="routine-graph-container" id="routineGraphContainer">
-              <!-- Rendered by app.js -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Date Controls & Routine Category Filters -->
-        <div class="routine-controls-panel">
-          <div class="date-navigator">
-            <button type="button" class="outline-small" id="routinePrevDay" title="Previous Day">←</button>
-            <button type="button" class="outline-small active" id="routineToday">Today</button>
-            <button type="button" class="outline-small" id="routineNextDay" title="Next Day">→</button>
-            <span class="current-date-badge" id="currentRoutineDateLabel">Loading date...</span>
-            <input type="date" id="routineDatePicker" aria-label="Select custom date">
-          </div>
-          <div class="routine-filter-chips">
-            <button type="button" class="chip active" data-routine-cat="">All</button>
-            <button type="button" class="chip" data-routine-cat="Study">Study</button>
-            <button type="button" class="chip" data-routine-cat="Work">Work</button>
-            <button type="button" class="chip" data-routine-cat="Health">Health</button>
-            <button type="button" class="chip" data-routine-cat="Habit">Habit</button>
-            <button type="button" class="chip" data-routine-cat="Personal">Personal</button>
-          </div>
-        </div>
-
-        <!-- Create / Edit Routine Form Panel -->
-        <div class="panel daily-plan-panel" id="planFormPanel" hidden>
-          <div class="panel-heading">
-            <h2 id="planFormTitle">Add Routine / Slot</h2>
-            <button type="button" class="mini-icon-btn" id="closePlanFormBtn" title="Close form">×</button>
-          </div>
-          <form id="planForm" class="plan-form">
-            <input type="hidden" name="id">
-            <div class="field full-span" id="importTaskGroup">
-              <label>📋 Link from My Tasks (optional auto-fill)</label>
-              <select name="task_id" id="planTaskSelect">
-                <option value="">-- Choose an existing task to auto-fill (optional) --</option>
-              </select>
-              <small class="muted" style="display:block;margin-top:4px">Auto-populates title &amp; category, and ticking the routine slot marks your task done!</small>
-            </div>
-            <div class="field full-span">
-              <label>Routine / Activity Name *</label>
-              <input name="name" id="planNameInput" required maxlength="180" placeholder="e.g. Morning Workout, Math &amp; DSA, Project Work">
-            </div>
-            <div class="field">
-              <label>Category</label>
-              <select name="category" id="planCategory">
-                <option value="General">General</option>
-                <option value="Study">Study</option>
-                <option value="Work">Work</option>
-                <option value="Health">Health &amp; Fitness</option>
-                <option value="Habit">Habit</option>
-                <option value="Personal">Personal</option>
+            <div class="form-group">
+              <label class="form-label">Gender</label>
+              <select id="authGender" class="form-input">
+                <option value="" disabled selected>Select gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Prefer not to say">Prefer not to say</option>
               </select>
             </div>
-            <div class="field">
-              <label>Start Date *</label>
-              <input name="date" id="planDate" type="date" required>
+          </div>
+
+          <!-- Email Address -->
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input type="email" id="authEmail" class="form-input" placeholder="you@example.com" required autocomplete="email">
+          </div>
+
+          <!-- Role selector for Sign Up -->
+          <div class="form-group signup-only">
+            <label class="form-label">Account Role</label>
+            <select id="authRoleSelect" class="form-input">
+              <option value="user">User (Standard Access)</option>
+              <option value="admin">Admin (System Administrator)</option>
+            </select>
+          </div>
+
+          <!-- Password (User requirement: only 6 digit no. ya word special character) -->
+          <div class="form-group">
+            <label class="form-label">Password (6 digits)</label>
+            <div class="input-wrapper">
+              <input type="password" id="authPassword" class="form-input" placeholder="Enter 6 digit numeric password" required autocomplete="current-password">
+              <button type="button" class="input-suffix-btn" onclick="togglePasswordVisibility('authPassword', this)">Show</button>
             </div>
-            <div class="field">
-              <label>Start Time</label>
-              <input name="start_time" id="planStart" type="time" value="09:00" required>
+            <div class="form-help-text signup-only">Use 6 characters (numbers, letters, or special characters).</div>
+          </div>
+
+          <!-- Confirm Password (Sign Up only) -->
+          <div class="form-group signup-only">
+            <label class="form-label">Confirm password</label>
+            <div class="input-wrapper">
+              <input type="password" id="authConfirmPassword" class="form-input" placeholder="Confirm your password" autocomplete="new-password">
+              <button type="button" class="input-suffix-btn" onclick="togglePasswordVisibility('authConfirmPassword', this)">Show</button>
             </div>
-            <div class="field">
-              <label>End Time</label>
-              <input name="end_time" id="planEnd" type="time" value="10:30" required>
+          </div>
+
+          <p class="form-help-text signup-only" style="margin-bottom: 1.25rem;">
+            Create your account with your name, email, and password. No email OTP required.
+          </p>
+
+          <!-- Submit Button -->
+          <button type="submit" id="authSubmitBtn" class="btn-primary">
+            Login →
+          </button>
+        </form>
+
+        <!-- Toggle Sign In / Sign Up Card (Matching Image 1) -->
+        <div class="auth-footer-card">
+          <div class="auth-footer-prompt-block">
+            <span class="auth-footer-icon">👤+</span>
+            <div>
+              <div id="authTogglePrompt" style="font-weight: 700; font-size: 0.92rem; color: var(--text-main);">New to Taskaro?</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Create your account and start your productivity journey.</div>
             </div>
-            <div class="field full-span">
-              <label>Duration</label>
-              <output id="planDuration" class="duration-output">1 hour 30 minutes</output>
+          </div>
+          <a href="#" id="authToggleLink" class="auth-link" style="font-weight: 700; white-space: nowrap;" onclick="toggleAuthMode(event)">Create Account →</a>
+        </div>
+
+        <div style="font-size: 0.75rem; color: var(--text-light); text-align: center; margin-top: 1.5rem; letter-spacing: 0.05em;">
+          Secure • Simple • Productive
+        </div>
+
+        <!-- Quick Fill Demo Accounts -->
+        <div class="demo-credentials-box">
+          <div style="font-weight: 700; margin-bottom: 0.4rem; color: var(--text-muted);">Quick Demo Login (One-click fill):</div>
+          <span class="demo-chip" onclick="quickFillLogin('admin@taskaro.com', 'admin123', 'admin')">🛡️ Admin: admin@taskaro.com</span>
+          <span class="demo-chip" onclick="quickFillLogin('chiku@taskaro.com', 'user123', 'user')">👤 User: chiku@taskaro.com</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       USER VIEW SHELL (Matches Screenshot Image 2)
+       ======================================================== -->
+  <div id="userShell" class="app-container" style="display: none;">
+
+    <!-- TOP NAVIGATION BAR (Matches Screenshot Image 2) -->
+    <header class="top-navbar">
+      <!-- Brand Logo (Exact match with Target & Purple Dart) -->
+      <div class="brand-logo-wrap" onclick="navigateToTab('home')">
+        <div class="logo-icon-card">
+          <img src="logo.png" alt="Taskaro Logo" class="brand-logo-img">
+        </div>
+        <span class="brand-name-text">Taskaro</span>
+        <button id="adminBackBtn" class="admin-badge" style="display: none; cursor: pointer; border: none;" onclick="switchToAdminPortal()">
+          🛡️ RETURN TO ADMIN
+        </button>
+      </div>
+
+      <!-- Navigation Tabs (Exact match to sample image media_1794765384557_e37f9e43.png) -->
+      <nav id="userNavLinks" class="nav-links-wrapper">
+        <button class="nav-item active" data-tab="home" onclick="navigateToTab('home')">
+          <div class="nav-home-squircle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="4" width="7" height="16" rx="3.5" fill="white"/>
+              <rect x="13.5" y="4" width="7.5" height="7" rx="3.5" fill="white"/>
+              <rect x="13.5" y="13" width="7.5" height="7" rx="3.5" fill="white"/>
+            </svg>
+          </div>
+          <span>Home</span>
+        </button>
+
+        <button class="nav-item" data-tab="tasks" onclick="navigateToTab('tasks')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="4"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span>My Tasks</span>
+        </button>
+
+        <button class="nav-item" data-tab="timetable" onclick="navigateToTab('timetable')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="3"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="8" y1="2" x2="8" y2="5"/>
+            <line x1="16" y1="2" x2="16" y2="5"/>
+          </svg>
+          <span>Routine</span>
+        </button>
+
+        <button class="nav-item" data-tab="plans" onclick="navigateToTab('plans')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="2" x2="12" y2="22"/>
+            <rect x="5" y="7" width="14" height="10" rx="2"/>
+          </svg>
+          <span>Plans</span>
+        </button>
+
+        <button class="nav-item" data-tab="notes" onclick="navigateToTab('notes')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h2M4 10h2M4 14h2M4 18h2"/>
+            <rect x="6" y="3" width="14" height="18" rx="2"/>
+            <line x1="10" y1="8" x2="16" y2="8"/>
+            <line x1="10" y1="12" x2="16" y2="12"/>
+            <line x1="10" y1="16" x2="14" y2="16"/>
+          </svg>
+          <span>Notes</span>
+        </button>
+
+        <button class="nav-item" data-tab="ai" onclick="navigateToTab('ai')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            <circle cx="9" cy="10" r="1" fill="currentColor"/>
+            <circle cx="12" cy="10" r="1" fill="currentColor"/>
+            <circle cx="15" cy="10" r="1" fill="currentColor"/>
+          </svg>
+          <span>Ask AI</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls -->
+      <div class="nav-right-controls">
+        <div class="nav-search-box">
+          <span class="nav-search-icon">🔍</span>
+          <input type="text" id="globalSearchInput" class="nav-search-input" placeholder="Search your tasks... ↵" onkeyup="handleGlobalSearch(event)">
+        </div>
+
+        <button class="nav-icon-btn" id="notifBellBtn" onclick="toggleNotificationDrawer()" title="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span id="notifBadge" class="nav-badge-dot"></span>
+        </button>
+
+        <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode" style="border-radius: var(--radius-full); width: 36px; height: 36px;">
+          <span class="theme-toggle-icon">🌙</span>
+        </button>
+
+        <div class="user-profile-badge" onclick="navigateToTab('profile')" title="View Profile">
+          <div id="userAvatarCircle" class="avatar-circle">U</div>
+          <span id="navUserName">User</span>
+        </div>
+
+        <button class="signout-btn" onclick="handleLogout()" title="Sign out of current account">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          <span>Sign out</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- NOTIFICATION DRAWER (Matches Right Side of Image 2) -->
+    <div id="notificationDrawer" class="notification-drawer">
+      <div class="notif-header">
+        <span class="notif-title">Notifications</span>
+        <div class="notif-header-actions">
+          <button class="notif-mark-read" onclick="markAllNotificationsRead()">Mark all read</button>
+          <button class="notif-close-btn" onclick="toggleNotificationDrawer()">×</button>
+        </div>
+      </div>
+      <ul id="notifListContainer" class="notif-list">
+        <!-- Rendered dynamically via JS -->
+      </ul>
+    </div>
+
+    <!-- MAIN USER BODY -->
+    <main class="main-content">
+      <!-- Sub-Navigation Action Bar (Exact match to crop media_1794765384557_e37f9e43.png) -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div class="nav-search-box" style="width: 300px;">
+          <span class="nav-search-icon">🔍</span>
+          <input type="text" class="nav-search-input" placeholder="Search your tasks... ↵" onkeyup="handleGlobalSearch(event)">
+        </div>
+        <button class="floating-ask-ai-btn" onclick="navigateToTab('ai')">
+          <span style="font-size: 1rem; color: #6366f1;">✦</span> Ask AI
+        </button>
+      </div>
+
+      <!-- USER HOME / DASHBOARD TAB -->
+      <section id="tab-home" class="tab-pane">
+        <div class="workspace-banner">
+          <div>
+            <div class="workspace-tag">YOUR WORKSPACE</div>
+            <h1 id="welcomeGreeting" class="workspace-greeting">Good evening, chiku</h1>
+            <p class="workspace-subtext">A little progress each day adds up to big results.</p>
+          </div>
+          <div>
+            <button class="workspace-action-btn" onclick="navigateToTab('plans')">
+              <span>🎯</span> Plans & Roadmaps
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Stat Cards (Matches Image 2: Total tasks 8, Pending 3, In Progress 5, Completed 0) -->
+        <div class="stat-cards-grid">
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Total tasks</span>
+              <div class="stat-icon-wrapper stat-icon-purple">📄</div>
             </div>
-            <div class="field full-span">
-              <label>Frequency / Repeat</label>
-              <div class="repeat-options">
-                <label><input type="radio" name="repeat" value="daily" checked> Daily (Every day)</label>
-                <label><input type="radio" name="repeat" value="weekdays"> Weekdays (Mon–Fri)</label>
-                <label><input type="radio" name="repeat" value="weekends"> Weekends (Sat–Sun)</label>
-                <label><input type="radio" name="repeat" value="weekly"> Weekly</label>
-                <label><input type="radio" name="repeat" value="once"> Once</label>
+            <div id="statTotalTasks" class="stat-card-value">8</div>
+            <div class="stat-card-subtitle">All your tasks</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Pending</span>
+              <div class="stat-icon-wrapper stat-icon-amber">⏰</div>
+            </div>
+            <div id="statPendingTasks" class="stat-card-value">3</div>
+            <div class="stat-card-subtitle">Waiting to begin</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">In Progress</span>
+              <div class="stat-icon-wrapper stat-icon-blue">⚡</div>
+            </div>
+            <div id="statInProgressTasks" class="stat-card-value">5</div>
+            <div class="stat-card-subtitle">Actively working</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-card-title">Completed</span>
+              <div class="stat-icon-wrapper stat-icon-green">✓</div>
+            </div>
+            <div id="statCompletedTasks" class="stat-card-value">0</div>
+            <div class="stat-card-subtitle">Nicely done</div>
+          </div>
+        </div>
+
+        <!-- Target & Plans Roadmap Card -->
+        <div class="roadmap-card">
+          <div class="roadmap-left">
+            <div class="roadmap-tag">TARGET & PLANS ROADMAP</div>
+            <div class="roadmap-title">Active Plan / Goal Prep</div>
+            <div class="roadmap-pills-row">
+              <span id="activeGoalCategory" class="badge-tag badge-primary">Academic</span>
+              <span id="activeGoalDuration" class="badge-tag">3 Months</span>
+            </div>
+            <div id="activeGoalName" class="roadmap-goal-name">External praticals</div>
+            <div class="roadmap-countdown">
+              <span id="activeGoalDays" class="countdown-number">56</span> Days Remaining until Target • <span id="activeGoalTargetDate">31 Dec 2026</span>
+            </div>
+          </div>
+          <div>
+            <button class="roadmap-action-btn" onclick="navigateToTab('plans')">
+              Open Daily Roadmap →
+            </button>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+          <div>
+            <div class="section-header-row">
+              <h2 class="section-title">Today's Assigned Tasks</h2>
+            </div>
+            <div id="homeTasksList" class="tasks-container"></div>
+          </div>
+          <div>
+            <div class="section-header-row">
+              <h2 class="section-title">Daily Routine</h2>
+              <button class="btn-outline" onclick="openAddRoutineModal()">+ Add</button>
+            </div>
+            <div id="homeRoutinesList" class="tasks-container" style="margin-bottom: 2rem;"></div>
+
+            <div class="section-header-row">
+              <h2 class="section-title">Quick Notes</h2>
+              <button class="btn-outline" onclick="openAddNoteModal()">+ Note</button>
+            </div>
+            <div id="homeNotesList" class="tasks-container"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- USER MY TASKS TAB -->
+      <section id="tab-tasks" class="tab-pane" style="display: none;">
+        <div class="section-header-row">
+          <div>
+            <h1 class="workspace-greeting">My Tasks</h1>
+            <p class="workspace-subtext">Work on tasks assigned by your administrator. Update progress, manage checklist, and mark completion.</p>
+          </div>
+          <span class="badge-tag" style="background: var(--primary-light); color: var(--primary); font-weight: 600; padding: 0.5rem 1rem; border-radius: var(--radius-full); font-size: 0.85rem;">
+            🛡️ Tasks Assigned by Admin
+          </span>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <button class="suggestion-chip" onclick="filterTasks('all')">All Tasks</button>
+          <button class="suggestion-chip" onclick="filterTasks('pending')">Pending</button>
+          <button class="suggestion-chip" onclick="filterTasks('in_progress')">In Progress</button>
+          <button class="suggestion-chip" onclick="filterTasks('completed')">Completed</button>
+          <button class="suggestion-chip" onclick="filterTasks('blocked')">🔒 Blocked</button>
+          <button class="suggestion-chip" onclick="filterTasks('overdue')">⚠️ Overdue</button>
+        </div>
+
+        <div id="fullTasksContainer" class="tasks-container"></div>
+      </section>
+
+      <!-- USER ROUTINE TAB -->
+      <section id="tab-timetable" class="tab-pane" style="display: none;">
+        <div class="section-header-row">
+          <div>
+            <h1 class="workspace-greeting">Routine & Schedule</h1>
+            <p class="workspace-subtext">Organize daily study routines, lectures, and activities.</p>
+          </div>
+          <button class="btn-primary" style="width: auto;" onclick="openAddScheduleModal()">+ Add Routine Slot</button>
+        </div>
+
+        <div class="data-table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Time Slot</th>
+                <th>Activity Title</th>
+                <th>Type</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- USER PLANS TAB -->
+      <section id="tab-plans" class="tab-pane" style="display: none;">
+        <div class="section-header-row">
+          <div>
+            <h1 class="workspace-greeting">Plans & Roadmaps</h1>
+            <p class="workspace-subtext">Structured preparation for semester exams, practicals, and targets.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-outline" onclick="openPrepSessionModal()">⏱ Log Study Time</button>
+            <button class="btn-primary" style="width: auto;" onclick="openAddPlanModal()">+ New Plan</button>
+          </div>
+        </div>
+        <div id="plansListContainer"></div>
+      </section>
+
+      <!-- USER NOTES TAB -->
+      <section id="tab-notes" class="tab-pane" style="display: none;">
+        <div class="section-header-row">
+          <div>
+            <h1 class="workspace-greeting">Productivity Notes</h1>
+            <p class="workspace-subtext">Capture technical concepts, exam formulas, and meeting summaries.</p>
+          </div>
+          <button class="btn-primary" style="width: auto;" onclick="openAddNoteModal()">+ Create Note</button>
+        </div>
+        <div id="fullNotesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;"></div>
+      </section>
+
+      <!-- USER ASK AI TAB -->
+      <section id="tab-ai" class="tab-pane" style="display: none;">
+        <div class="chat-container">
+          <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="font-size: 1.5rem;">🤖</div>
+              <div>
+                <div style="font-weight: 700; font-size: 1rem;">Taskaro Personal AI</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Connected to your workspace database</div>
               </div>
             </div>
-            <div class="field full-span">
-              <label>Target / Notes (optional)</label>
-              <textarea name="notes" rows="3" maxlength="3010" placeholder="What is the goal or milestone for this slot?"></textarea>
+            <span class="badge-tag badge-primary">Database-Aware</span>
+          </div>
+
+          <div id="userChatMessages" class="chat-messages-box">
+            <div class="chat-bubble assistant">
+              Hello! I am your personal Taskaro assistant. I analyze your tasks, routines, exam roadmaps, and notes. How can I help you today?
             </div>
-            <div class="field full-span">
-              <label class="check-label"><input type="checkbox" name="reminder" checked> In-app reminder when slot begins</label>
-            </div>
-            <div class="modal-actions">
-              <button type="button" class="outline-small" id="cancelPlanEdit">Cancel</button>
-              <button type="submit" class="primary-btn" id="savePlanBtn">Save Routine</button>
-            </div>
+          </div>
+
+          <div class="chat-suggestions-row">
+            <button class="suggestion-chip" onclick="askAiWithPrompt('What should I complete today?')">What should I complete today?</button>
+            <button class="suggestion-chip" onclick="askAiWithPrompt('How many tasks are pending?')">How many tasks are pending?</button>
+            <button class="suggestion-chip" onclick="askAiWithPrompt('Why is my task blocked?')">Why is my task blocked?</button>
+            <button class="suggestion-chip" onclick="askAiWithPrompt('Create a daily routine for me')">Create a daily routine for me</button>
+            <button class="suggestion-chip" onclick="askAiWithPrompt('Summarize my Python notes')">Summarize my Python notes</button>
+          </div>
+
+          <form class="chat-input-row" onsubmit="handleSendAiMessage(event, 'userChatInput', 'userChatMessages')">
+            <input type="text" id="userChatInput" class="chat-input" placeholder="Ask about tasks, deadlines, routines, or notes..." autocomplete="off">
+            <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
           </form>
         </div>
-
-        <!-- Daily Routine Checklist / Time Table Cards -->
-        <div class="panel">
-          <div class="panel-heading">
-            <div>
-              <h2 id="planItemsHeading">Today's Routine Checklist</h2>
-              <p class="muted" id="planItemsSub">Click the circular tick mark to mark completed for this day.</p>
-            </div>
-          </div>
-          <div id="planItems" class="routine-items-list"></div>
-        </div>
-
-        <!-- Weekly Calendar Grid Overview -->
-        <div class="panel planner-panel">
-          <div class="planner-toolbar">
-            <button type="button" id="prevWeek" class="outline-small">← Previous</button>
-            <h2 id="weekLabel">This week</h2>
-            <button type="button" id="nextWeek" class="outline-small">Next →</button>
-            <button type="button" id="todayWeek" class="text-button">Current Week</button>
-          </div>
-          <div id="plannerGrid" class="planner-grid"></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-heading">
-            <h2>Unscheduled Tasks</h2>
-            <span class="muted small-text">Tasks without a due date</span>
-          </div>
-          <div id="unscheduledTasks" class="task-list"></div>
-        </div>
       </section>
 
-      <!-- Exam & Long-Term Roadmaps View (1 to 12 Months) -->
-      <section id="view-exam-plans" class="view hidden">
-        <div class="page-heading">
+      <!-- PROFILE & SETTINGS TAB -->
+      <section id="tab-profile" class="tab-pane" style="display: none;">
+        <div class="section-header-row">
           <div>
-            <p class="eyebrow">CUSTOM HORIZON &amp; EXAM PREPARATION</p>
-            <h1>Exam &amp; Goal Roadmaps</h1>
-            <p class="muted">Set 1-month to 12-month roadmaps for tests, competitive exams, or ambitious milestones with daily activity tracking.</p>
+            <h1 class="workspace-greeting">Profile & Settings</h1>
+            <p class="workspace-subtext">Manage account preferences, password, and display mode.</p>
           </div>
-          <div class="heading-actions">
-            <button type="button" class="primary-btn" id="openNewExamPlanBtn">＋ Create Roadmap</button>
+        </div>
+        <div style="max-width: 600px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: 2rem;">
+          <form onsubmit="handleUpdateProfile(event)">
+            <h3 style="margin-bottom: 1.25rem;">Account Details</h3>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="profileName" class="form-input" required>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group">
+                <label class="form-label">Age</label>
+                <input type="number" id="profileAge" class="form-input" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select id="profileGender" class="form-input">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                  <option value="Prefer not to say">Prefer not to say</option>
+                  <option value="Unspecified">Unspecified</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email (Read Only)</label>
+              <input type="email" id="profileEmail" class="form-input" disabled style="opacity: 0.7;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role</label>
+              <input type="text" id="profileRole" class="form-input" disabled style="opacity: 0.7;">
+            </div>
+            <button type="submit" class="btn-primary" style="width: auto; margin-bottom: 2rem;">Save Changes</button>
+          </form>
+          <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+          <form onsubmit="handleChangePassword(event)">
+            <h3 style="margin-bottom: 1.25rem;">Change Password</h3>
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input type="password" id="currentPassword" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Password (At least 6 characters)</label>
+              <input type="password" id="newPassword" class="form-input" required minlength="6">
+            </div>
+            <button type="submit" class="btn-outline">Update Password</button>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+
+  <!-- ========================================================
+       ADMIN VIEW SHELL (Matches Uploaded Images 1-5 Structure
+       with Previous UI/UX Design Aesthetic)
+       ======================================================== -->
+  <div id="adminShell" class="admin-shell" style="display: none;">
+
+    <!-- Left Sleek Admin Sidebar (Matches Image 1, 3, 4, 5) -->
+    <aside class="admin-sidebar">
+      <div class="admin-sidebar-top">
+        <!-- Brand Header -->
+        <div class="admin-brand-header">
+          <div class="logo-icon-card">
+            <img src="logo.png" alt="Taskaro Logo" class="brand-logo-img">
+          </div>
+          <div>
+            <span class="brand-name-text">Taskaro</span>
+            <div style="font-size: 0.7rem; color: #818cf8; font-weight: 700; letter-spacing: 0.08em;">ADMIN CONSOLE</div>
           </div>
         </div>
 
-        <!-- Plans List View -->
-        <div id="examPlansListView">
-          <div class="routine-controls-panel" style="margin-bottom:20px">
-            <div class="routine-filter-chips" id="examFilterChips">
-              <button type="button" class="chip active" data-exam-filter="">All Roadmaps</button>
-              <button type="button" class="chip" data-exam-filter="Exam">Exams &amp; Tests</button>
-              <button type="button" class="chip" data-exam-filter="1month">1 Month</button>
-              <button type="button" class="chip" data-exam-filter="3months">3 Months</button>
-              <button type="button" class="chip" data-exam-filter="6months">6 Months</button>
-              <button type="button" class="chip" data-exam-filter="12months">12 Months</button>
+        <!-- Main Navigation Items -->
+        <div class="admin-menu-label">Main Menu</div>
+        <nav style="display: flex; flex-direction: column; gap: 0.35rem;">
+          <button class="admin-nav-item active" data-tab="admin-dashboard" onclick="navigateToTab('admin-dashboard')">
+            <span>📊</span> Dashboard
+          </button>
+          <button class="admin-nav-item" data-tab="admin-tasks" onclick="navigateToTab('admin-tasks')">
+            <span>📋</span> Tasks List
+          </button>
+          <button class="admin-nav-item" data-tab="admin-users" onclick="navigateToTab('admin-users')">
+            <span>👥</span> Users & Access
+          </button>
+          <button class="admin-nav-item" data-tab="admin-reports" onclick="navigateToTab('admin-reports')">
+            <span>📈</span> Analytics & Reports
+          </button>
+          <button class="admin-nav-item" data-tab="admin-messages" onclick="navigateToTab('admin-messages')">
+            <span>💬</span> Team Messages
+          </button>
+          <button class="admin-nav-item" data-tab="admin-logs" onclick="navigateToTab('admin-logs')">
+            <span>📜</span> Activity Logs
+          </button>
+          <button class="admin-nav-item" data-tab="admin-ai" onclick="navigateToTab('admin-ai')">
+            <span>🤖</span> Admin AI
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="admin-sidebar-bottom">
+        <button class="admin-nav-item" style="color: #60a5fa; margin-bottom: 0.5rem;" onclick="switchToUserView()">
+          <span>👤</span> Switch to User View
+        </button>
+        <button class="admin-nav-item" style="color: #f87171;" onclick="handleLogout()">
+          <span>➔</span> Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Stage Content Area -->
+    <div class="admin-main-stage">
+      <!-- Topbar Header -->
+      <header class="admin-topbar">
+        <div>
+          <div id="adminSectionBreadcrumb" class="admin-topbar-title">Dashboard Overview</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">Manage platform operations, teams & assignments</div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1.25rem;">
+          <div class="nav-search-box">
+            <span class="nav-search-icon">🔍</span>
+            <input type="text" class="nav-search-input" placeholder="Search tasks, users... ↵" onkeyup="handleAdminGlobalSearch(event)">
+          </div>
+
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+            <span class="theme-toggle-icon">🌙</span>
+          </button>
+
+          <button class="btn-primary" style="width: auto; padding: 0.55rem 1.15rem; font-size: 0.875rem;" onclick="openAdminAssignTaskModal()">
+            + New Task
+          </button>
+
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div id="adminAvatarCircle" class="avatar-circle" style="background: #4f46e5;">A</div>
+            <div>
+              <div style="font-weight: 700; font-size: 0.85rem;" id="adminTopbarName">System Admin</div>
+              <div style="font-size: 0.72rem; color: #4f46e5; font-weight: 600;">Super Administrator</div>
             </div>
           </div>
-          <div id="examPlansGrid" class="exam-plans-grid">
-            <!-- Rendered by app.js -->
-          </div>
         </div>
+      </header>
 
-        <!-- Single Plan Detail & Daily Activity Tracker View -->
-        <div id="examPlanDetailView" class="hidden">
-          <div class="exam-detail-header">
-            <div class="exam-hero-top">
-              <div class="exam-hero-title-group">
-                <button type="button" class="text-button" id="backToPlansBtn" style="margin-bottom:8px">← All Roadmaps</button>
-                <h1 id="detailPlanTitle">Plan Title</h1>
-                <div class="exam-hero-meta">
-                  <span class="exam-cat-pill" id="detailPlanCat">Exam</span>
-                  <span class="exam-duration-pill" id="detailPlanDuration">12 Months</span>
-                  <span class="muted small-text" id="detailPlanDates">Start - Target</span>
+      <main class="main-content" style="padding: 2rem;">
+
+        <!-- 1. ADMIN DASHBOARD (Matches Image 3 & Image 5) -->
+        <section id="tab-admin-dashboard" class="tab-pane">
+          <!-- 4 Stat Cards with Trends (Matching Image 5) -->
+          <div class="stat-cards-grid">
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-card-title">Total Tasks</span>
+                <span class="stat-card-trend trend-up">+8 this week</span>
+              </div>
+              <div id="adminStatTasks" class="stat-card-value">8</div>
+              <div class="stat-card-subtitle">All active assignments</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-card-title">Completed</span>
+                <span class="stat-card-trend trend-up">✓ On track</span>
+              </div>
+              <div id="adminStatCompleted" class="stat-card-value" style="color: #059669;">0</div>
+              <div class="stat-card-subtitle">Nicely finished</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-card-title">In Progress</span>
+                <span class="stat-card-trend" style="background: #ede9fe; color: #6d28d9;">⚡ Active</span>
+              </div>
+              <div id="adminStatInProgress" class="stat-card-value" style="color: #2563eb;">5</div>
+              <div class="stat-card-subtitle">Being worked on</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <span class="stat-card-title">Overdue</span>
+                <span class="stat-card-trend trend-warn">⚠️ Needs attention</span>
+              </div>
+              <div id="adminStatOverdue" class="stat-card-value" style="color: #dc2626;">2</div>
+              <div class="stat-card-subtitle">Exceeded deadline</div>
+            </div>
+          </div>
+
+          <!-- Middle Row: Task Progress Chart + By Status Donut (Image 5) -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Task Progress Weekly Chart -->
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <div>
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">Task Progress</h3>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Weekly activity & completion trends</div>
                 </div>
               </div>
-              <div class="heading-actions">
-                <button type="button" class="outline-small" id="deletePlanBtn" style="color:var(--red);border-color:var(--red)">🗑 Delete Plan</button>
+              <div style="height: 240px; position: relative;">
+                <canvas id="chartTaskProgressSpline"></canvas>
               </div>
             </div>
 
-            <div class="exam-hero-metrics">
-              <div class="exam-metric-card">
-                <span>Days Remaining</span>
-                <strong id="detailDaysLeft" style="color:var(--primary)">0</strong>
+            <!-- By Status Distribution Donut -->
+            <div class="stat-card">
+              <div class="stat-card-header">
+                <div>
+                  <h3 style="font-size: 1.05rem; font-weight: 700;">By Status</h3>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Task distribution breakdown</div>
+                </div>
               </div>
-              <div class="exam-metric-card">
-                <span>Current Timeline</span>
-                <strong id="detailCurrentDay">Day 1 / 30</strong>
-              </div>
-              <div class="exam-metric-card">
-                <span>Milestone Progress</span>
-                <strong id="detailProgressPct">0%</strong>
-              </div>
-              <div class="exam-metric-card">
-                <span>Daily Target</span>
-                <strong id="detailDailyHours">4 hrs</strong>
-              </div>
-              <div class="exam-metric-card">
-                <span>Study Logged</span>
-                <strong id="detailTotalHours">0 hrs</strong>
+              <div style="height: 240px; position: relative;">
+                <canvas id="chartStatusGauge"></canvas>
               </div>
             </div>
           </div>
 
-          <!-- Milestones / Phases Roadmap Panel -->
-          <div class="panel exam-milestones-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">ROADMAP PHASES</p>
-                <h2>Syllabus &amp; Preparation Milestones</h2>
+          <!-- Bottom Row: Recent Tasks Table + Team Workload (Image 3 & 5) -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+            <!-- Recent Tasks -->
+            <div>
+              <div class="section-header-row">
+                <div>
+                  <h3 class="section-title">Recent Tasks</h3>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Latest operational activities</div>
+                </div>
+                <button class="btn-outline" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="navigateToTab('admin-tasks')">View all ↗</button>
+              </div>
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Task</th>
+                      <th>Priority</th>
+                      <th>Status</th>
+                      <th>Due</th>
+                      <th>Assignee</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminRecentTasksTableBody">
+                    <!-- Populated dynamically -->
+                  </tbody>
+                </table>
               </div>
             </div>
-            <div id="detailMilestonesContainer" class="milestones-timeline">
-              <!-- Rendered by app.js -->
+
+            <!-- Team Workload -->
+            <div>
+              <div class="section-header-row">
+                <div>
+                  <h3 class="section-title">Team Workload</h3>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">Active members progress</div>
+                </div>
+              </div>
+              <div class="stat-card" id="adminWorkloadContainer" style="padding: 1.25rem;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. ADMIN TASKS MANAGEMENT (Matches Image 2 HabotConnect Task List) -->
+        <section id="tab-admin-tasks" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">WORK UPDATE</div>
+              <h1 class="workspace-greeting">Task List</h1>
+              <p class="workspace-subtext">Manage and track all operations tasks in one place</p>
+            </div>
+            <button class="btn-primary" style="width: auto;" onclick="openAdminAssignTaskModal()">
+              + Add Task
+            </button>
+          </div>
+
+          <!-- Filter & Search Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.5rem; flex: 1; max-width: 400px;">
+              <input type="text" id="adminTaskFilterSearch" class="form-input" placeholder="Search tasks by title or assignee..." onkeyup="filterAdminTasksTable()">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="adminTaskStatusFilter" class="form-input" style="width: auto;" onchange="filterAdminTasksTable()">
+                <option value="all">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Blocked">Locked / Blocked</option>
+              </select>
             </div>
           </div>
 
-          <!-- Daily Activity Tracker Section -->
-          <div class="panel exam-daily-section">
-            <div class="exam-daily-topbar">
-              <div class="date-navigator">
-                <button type="button" class="outline-small" id="examPrevDay">←</button>
-                <button type="button" class="outline-small active" id="examToday">Today</button>
-                <button type="button" class="outline-small" id="examNextDay">→</button>
-                <span class="current-date-badge" id="examCurrentDateLabel">Today</span>
-                <input type="date" id="examDatePicker" aria-label="Select date for activities">
-              </div>
-              <div class="exam-daily-actions">
-                <button type="button" class="outline-btn" id="shiftBacklogBtn" title="Shift uncompleted past tasks to tomorrow">⚡ Shift Incomplete to Tomorrow</button>
-                <button type="button" class="primary-btn" id="addExamActivityBtn">＋ Add Daily Task</button>
-              </div>
-            </div>
+          <!-- Task Table Matching Image 2 Columns -->
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Title & Category</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Assigned To</th>
+                  <th>Due Date</th>
+                  <th>Dependency</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminTasksFullTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-            <div id="examActivityList" class="exam-activity-list">
-              <!-- Rendered by app.js -->
+        <!-- 3. ADMIN USER MANAGEMENT (Matches Image 4 Admin Panel Users) -->
+        <section id="tab-admin-users" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">PLATFORM ACCESS</div>
+              <h1 class="workspace-greeting">Users</h1>
+              <p class="workspace-subtext">Manage platform users and their access</p>
             </div>
+            <button class="btn-primary" style="width: auto;" onclick="openAdminAddUserModal()">
+              + Add New User
+            </button>
           </div>
 
-          <!-- 1-Month to 12-Month Contribution Heatmap Grid -->
-          <div class="panel exam-heatmap-panel">
-            <div class="panel-heading">
-              <div>
-                <p class="eyebrow">CONSISTENCY &amp; STREAK MATRIX</p>
-                <h2>Full Duration Activity Heatmap</h2>
-              </div>
-              <span class="muted small-text">Daily preparation intensity</span>
-            </div>
-            <div class="heatmap-grid-scroll">
-              <div id="examHeatmapGrid" class="heatmap-container">
-                <!-- Rendered by app.js -->
-              </div>
-            </div>
-            <div class="heatmap-legend">
-              <span>Less</span>
-              <span class="legend-square level-0" style="background:var(--surface-2);border:1px solid var(--line)"></span>
-              <span class="legend-square level-1" style="background:#c7d2fe"></span>
-              <span class="legend-square level-2" style="background:#818cf8"></span>
-              <span class="legend-square level-3" style="background:#4f46e5"></span>
-              <span class="legend-square level-4" style="background:#312e81"></span>
-              <span>More</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-resources" class="view hidden">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">YOUR PERSONAL LIBRARY</p>
-            <h1>Notes Management</h1>
-            <p class="muted">Write, organize, search, and summarize your notes and links.</p>
-          </div>
-          <div class="heading-actions">
-            <button type="button" class="outline-btn" id="clearAllNotesBtn" style="color:var(--red);border-color:var(--red)" title="Clear all notes">🗑 Clear All Notes</button>
-            <button class="primary-btn" id="addResource">＋ Add note</button>
-          </div>
-        </div>
-        <div class="panel filters-panel" style="margin-bottom:20px">
-          <div class="filters">
-            <input id="noteSearch" placeholder="Search notes by title, notes, or category…" autocomplete="off">
-            <select id="noteCategoryFilter">
-              <option value="">All categories</option>
+          <!-- Filter / Search Row Matching Image 4 -->
+          <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+            <input type="text" id="adminUserSearchInput" class="form-input" style="max-width: 320px;" placeholder="Search users by name or email..." onkeyup="filterAdminUsersTable()">
+            <select id="adminUserStatusFilter" class="form-input" style="max-width: 160px;" onchange="filterAdminUsersTable()">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="deactivated">Suspended</option>
             </select>
-            <button id="clearNoteFilters" class="outline-small">Clear</button>
           </div>
-        </div>
-        <div id="resourcesGrid" class="resources-grid"></div>
-      </section>
-      <section id="view-assistant" class="view hidden">
-        <div class="page-heading">
-          <div>
-            <p class="eyebrow">YOUR PERSONAL PLANNING PARTNER</p>
-            <h1>AI Assistant</h1>
-            <p class="muted">Get intelligent answers about your tasks, notes, workload capacity, and priorities.</p>
+
+          <!-- Users Table Matching Image 4 Columns -->
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Tasks</th>
+                  <th>Completed</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBodyNew">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
           </div>
-          <div class="assistant-modes-toggle" id="assistantModesToggle">
-            <button type="button" class="assistant-mode-chip active" data-assistant-mode="tasks_and_notes">📋 My Tasks &amp; Notes Mode</button>
-            <button type="button" class="assistant-mode-chip" data-assistant-mode="workload_aware">⚡ Workload-aware Mode</button>
-          </div>
-        </div>
-        <div class="assistant-layout">
-          <div class="panel assistant-chat">
-            <div class="assistant-head">
-              <span class="assistant-avatar">✧</span>
-              <div>
-                <h2>TaskMind Assistant</h2>
-                <p class="muted"><span class="online-dot"></span> Private to your workspace</p>
-              </div>
-              <span class="mode-pill" id="assistantMode">My Tasks &amp; Notes Mode</span>
+        </section>
+
+        <!-- 4. ADMIN ANALYTICS & REPORTS (Matches Image 1 TaskFlow Analytics) -->
+        <section id="tab-admin-reports" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">TEAM PERFORMANCE</div>
+              <h1 class="workspace-greeting">Analytics & Reports</h1>
+              <p class="workspace-subtext">Detailed insights into your team's performance</p>
             </div>
-            <div id="chatMessages" class="chat-messages">
-              <div class="chat-bubble bot">
-                Hi! I'm your TaskMind assistant. You can ask me about your pending or overdue tasks, request a daily priority plan, ask for a summary of your saved notes, or switch to Workload-aware Mode to audit your schedule capacity. What would you like to explore?
+            <button class="btn-outline" onclick="window.print()">
+              🖨 Export Report
+            </button>
+          </div>
+
+          <!-- Top 4 Analytics Metric Cards (Image 1) -->
+          <div class="stat-cards-grid">
+            <div class="stat-card">
+              <div class="stat-card-title">Task Completion Rate</div>
+              <div id="analyticsCompRate" class="stat-card-value" style="color: #2563eb;">94.2%</div>
+              <div class="stat-card-subtitle">Overall efficiency</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-title">Average Response Time</div>
+              <div class="stat-card-value" style="color: #4f46e5;">2.4h</div>
+              <div class="stat-card-subtitle">Assignment turnaround</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-title">Team Velocity</div>
+              <div class="stat-card-value" style="color: #059669;">18.5</div>
+              <div class="stat-card-subtitle">Tasks completed / week</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-title">Sprint Success Rate</div>
+              <div class="stat-card-value" style="color: #d97706;">87%</div>
+              <div class="stat-card-subtitle">On-time delivery</div>
+            </div>
+          </div>
+
+          <!-- Monthly Progress & Team Efficiency Trends (Image 1) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="stat-card">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Monthly Progress</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Task completion trends over 6 months</p>
+              <div style="height: 240px; position: relative;">
+                <canvas id="chartMonthlyTrends"></canvas>
               </div>
             </div>
-            <form id="chatForm" class="chat-form">
-              <textarea name="message" rows="2" placeholder="Ask about tasks, notes, or daily priorities…" required></textarea>
-              <button class="primary-btn" type="submit">Send ↑</button>
+
+            <div class="stat-card">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Team Efficiency Trend</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Overall efficiency percentage over time</p>
+              <div style="height: 240px; position: relative;">
+                <canvas id="chartEfficiencyTrends"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tasks by Category & Quick Insights (Image 1) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="stat-card">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Tasks by Category</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Distribution across different work categories</p>
+              <div id="categoryBarsContainer">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem;">Quick Insights</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Real-time automated diagnostic observations</p>
+              <div class="insight-card">
+                <span class="insight-icon">🏆</span>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.85rem;">Best day: Wednesday (95%)</div>
+                  <div style="font-size: 0.785rem; color: var(--text-muted);">Highest task completion rate recorded mid-week.</div>
+                </div>
+              </div>
+              <div class="insight-card">
+                <span class="insight-icon">⚠️</span>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.85rem;">Overdue Tasks: 2 pending items</div>
+                  <div style="font-size: 0.785rem; color: var(--text-muted);">Action required for Assignment 1 and submission dates.</div>
+                </div>
+              </div>
+              <div class="insight-card">
+                <span class="insight-icon">🚀</span>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.85rem;">Team Velocity Up 12% This Week</div>
+                  <div style="font-size: 0.785rem; color: var(--text-muted);">More subtasks completed with improved efficiency.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. ADMIN TEAM MESSAGES -->
+        <section id="tab-admin-messages" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">DIRECT INBOX</div>
+              <h1 class="workspace-greeting">Team Messages</h1>
+              <p class="workspace-subtext">Direct communication with users & broadcast announcements</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; height: 600px;">
+            <div class="data-table-wrapper" style="padding: 1rem; overflow-y: auto;" id="adminConversationsColumn">
+              <div style="font-weight: 700; margin-bottom: 0.75rem;">Users Inbox</div>
+              <div id="adminConversationsList"></div>
+            </div>
+            <div class="chat-container" style="height: 100%;">
+              <div class="chat-header">
+                <div id="adminChatRecipientName" style="font-weight: 700;">Select a user to chat</div>
+              </div>
+              <div id="adminThreadMessagesBox" class="chat-messages-box"></div>
+              <form class="chat-input-row" onsubmit="handleAdminSendMessage(event)">
+                <input type="text" id="adminMessageInput" class="chat-input" placeholder="Type instructions or reply..." required autocomplete="off">
+                <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. ADMIN LOGS -->
+        <section id="tab-admin-logs" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">AUDIT TRAIL</div>
+              <h1 class="workspace-greeting">Activity Logs</h1>
+              <p class="workspace-subtext">Comprehensive security audit trail of all platform events</p>
+            </div>
+          </div>
+          <div class="data-table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Target Entity</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="adminFullLogsBodyNew"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- 7. ADMIN AI ASSISTANT -->
+        <section id="tab-admin-ai" class="tab-pane" style="display: none;">
+          <div class="chat-container">
+            <div class="chat-header">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="font-size: 1.5rem;">🛡️</div>
+                <div>
+                  <div style="font-weight: 700; font-size: 1rem;">Taskaro Admin AI Assistant</div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);">System-wide workload, task analytics & assignment guidance</div>
+                </div>
+              </div>
+              <span class="admin-badge">ADMIN AUTHORIZED</span>
+            </div>
+
+            <div id="adminChatMessages" class="chat-messages-box">
+              <div class="chat-bubble assistant">
+                Hello Administrator. I can provide workload analytics, identify delayed tasks across team members, and give assignment recommendations.
+              </div>
+            </div>
+
+            <div class="chat-suggestions-row">
+              <button class="suggestion-chip" onclick="askAdminAi('How many users are registered?')">How many users are registered?</button>
+              <button class="suggestion-chip" onclick="askAdminAi('Which users have overdue tasks?')">Which users have overdue tasks?</button>
+              <button class="suggestion-chip" onclick="askAdminAi('Which user has the highest workload?')">Which user has highest workload?</button>
+              <button class="suggestion-chip" onclick="askAdminAi('Suggest task assignments based on workload')">Suggest task assignments</button>
+            </div>
+
+            <form class="chat-input-row" onsubmit="handleSendAiMessage(event, 'adminChatInput', 'adminChatMessages')">
+              <input type="text" id="adminChatInput" class="chat-input" placeholder="Ask system-level queries..." autocomplete="off">
+              <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
             </form>
-            <p class="fine-print">TaskMind AI processes your tasks, notes, and deadlines privately with sources cited below each answer.</p>
           </div>
-          <div class="panel prompt-panel">
-            <h2>Try asking</h2>
-            <button class="prompt-suggestion" data-prompt="Summarize my saved notes">📝 Summarize my saved notes <span>→</span></button>
-            <button class="prompt-suggestion" data-prompt="Recommend my daily priorities">⚡ Recommend daily priorities <span>→</span></button>
-            <button class="prompt-suggestion" data-prompt="What tasks are overdue or upcoming?">◷ Show overdue &amp; upcoming <span>→</span></button>
-            <button class="prompt-suggestion" data-prompt="Analyze my workload balance">⚖ Workload capacity check <span>→</span></button>
-            <button class="prompt-suggestion" data-prompt="Make a plan for today">☀ Make a plan for today <span>→</span></button>
-            <button class="prompt-suggestion" data-prompt="Break my most important task into subtasks">☷ Break a task into steps <span>→</span></button>
+        </section>
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       MODALS
+       ======================================================== -->
+
+  <!-- Add Task Modal -->
+  <div id="addTaskModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="taskModalTitle" class="modal-title">Create New Task</h3>
+        <button class="modal-close-btn" onclick="closeModal('addTaskModal')">×</button>
+      </div>
+      <form id="taskForm" onsubmit="handleSaveTask(event)">
+        <input type="hidden" id="taskEditId">
+        <div class="form-group">
+          <label class="form-label">Task Title</label>
+          <input type="text" id="taskTitle" class="form-input" placeholder="e.g. Complete BCA 311 Documentation" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="taskDescription" class="form-input" rows="3" placeholder="Provide task context and requirements..."></textarea>
+        </div>
+        <div class="form-group" id="adminAssigneeGroup" style="display: none;">
+          <label class="form-label">Assignee</label>
+          <select id="taskAssignee" class="form-input"></select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select id="taskPriority" class="form-input">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <input type="text" id="taskCategory" class="form-input" placeholder="e.g. Academic, Project, Development" value="General">
           </div>
         </div>
-      </section>
-    </div>
-  </main>
-  <!-- Mobile Bottom Tab Bar with Direct Tap Icons -->
-  <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
-    <button type="button" class="bottom-nav-item active" data-view="home" aria-label="Home">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="18" rx="2"/>
-          <rect x="14" y="3" width="7" height="7" rx="2"/>
-          <rect x="14" y="14" width="7" height="7" rx="2"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Home</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="tasks" aria-label="My Tasks">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="5"/>
-          <path d="m8.5 12 2.5 2.5 5-5"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Tasks</span>
-    </button>
-    <button type="button" class="bottom-nav-item bottom-nav-highlight" data-view="planner" aria-label="Time Table & Daily Routine">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="17" rx="3.5"/>
-          <line x1="16" y1="2" x2="16" y2="5"/>
-          <line x1="8" y1="2" x2="8" y2="5"/>
-          <line x1="3" y1="9" x2="21" y2="9"/>
-          <path d="M7 13h4M7 16h7"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Routine</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="exam-plans" aria-label="Exam Plans">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="12" y1="2" x2="12" y2="22"/>
-          <path d="M12 4h7a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-7"/>
-          <path d="M12 11H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h7"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Roadmaps</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="resources" aria-label="Notes">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="5" y="3" width="16" height="18" rx="3"/>
-          <path d="M10 8h7M10 12h7M10 16h4"/>
-          <path d="M3 6h4M3 10h4M3 14h4M3 18h4"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Notes</span>
-    </button>
-    <button type="button" class="bottom-nav-item" data-view="assistant" aria-label="Ask AI">
-      <span class="bottom-nav-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 14a3 3 0 0 1-3 3H7l-4 4V5a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3z"/>
-          <circle cx="8.5" cy="9.5" r="1.2" fill="currentColor"/>
-          <circle cx="12" cy="9.5" r="1.2" fill="currentColor"/>
-          <circle cx="15.5" cy="9.5" r="1.2" fill="currentColor"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Ask AI</span>
-    </button>
-  </nav>
-</section>
-<div id="modalBackdrop" class="modal-backdrop hidden"><div id="modal" class="modal" role="dialog" aria-modal="true"><div class="modal-heading"><h2 id="modalTitle">New task</h2><button id="closeModal" class="icon-btn">×</button></div><div id="modalBody"></div></div></div>
-
-<!-- Dynamic Rest / Skip Day Setup & Deletion Modal -->
-<div id="skipDayModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:540px">
-    <div class="modal-heading">
-      <h2>🌴 Configure Rest / Skip Day</h2>
-      <button id="closeSkipDayModal" class="icon-btn">×</button>
-    </div>
-    <form id="skipDayForm" class="modal-form">
-      <div class="field full-span">
-        <label>Target Date *</label>
-        <input type="date" name="skip_date" id="skipDateInput" required>
-      </div>
-      <div class="field full-span">
-        <label>Reason for Skip / Rest Day</label>
-        <select name="skip_reason" id="skipReasonSelect">
-          <option value="Rest &amp; Recovery">🌴 Rest &amp; Recovery (Scheduled Break)</option>
-          <option value="Vacation / Holiday">🏖️ Vacation / Holiday</option>
-          <option value="Sick Leave">🤒 Sick Leave / Health Recovery</option>
-          <option value="Travel">✈️ Travel &amp; Commute</option>
-          <option value="Exams Finished">🎉 Exams / Major Project Completed</option>
-          <option value="custom">✍️ Custom Reason...</option>
-        </select>
-      </div>
-      <div class="field full-span hidden" id="customReasonField">
-        <label>Enter Custom Reason</label>
-        <input name="custom_reason" id="customReasonInput" maxlength="100" placeholder="e.g. Attending family wedding">
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="outline-small" id="cancelSkipDayModal">Cancel</button>
-        <button type="submit" class="primary-btn" id="confirmSkipDayBtn">Save Rest / Skip Day</button>
-      </div>
-    </form>
-
-    <!-- Scheduled Skip Days Management & Deletion List -->
-    <div class="skip-days-management-section">
-      <div class="skip-days-list-header">
-        <h4>📅 Your Scheduled Rest / Skip Days</h4>
-        <span class="muted small-text" id="skipDaysCount">0 scheduled</span>
-      </div>
-      <div id="skipDaysListContainer" class="skip-days-list">
-        <p class="muted small-text">No rest days scheduled yet.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Add from Tasks Picker Modal -->
-<div id="taskPickerModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:600px">
-    <div class="modal-heading">
-      <h2>📋 Add Routine From My Tasks</h2>
-      <button id="closeTaskPickerModal" class="icon-btn">×</button>
-    </div>
-    <div class="task-picker-body">
-      <p class="muted" style="margin:0 0 12px;font-size:13px">Choose an existing task to schedule as a dedicated daily routine slot in your time table.</p>
-      <input type="text" id="taskPickerSearch" placeholder="Search tasks by title or category..." class="task-picker-search">
-      <div id="taskPickerItems" class="task-picker-items"></div>
-    </div>
-  </div>
-</div>
-
-<!-- Create New Exam Plan Modal -->
-<div id="newExamPlanModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:580px">
-    <div class="modal-heading">
-      <h2>🎯 Create Exam / Long-Term Roadmap</h2>
-      <button id="closeNewExamPlanModal" class="icon-btn">×</button>
-    </div>
-    <form id="newExamPlanForm" class="modal-form">
-      <div class="field full-span">
-        <label>Roadmap / Exam Title *</label>
-        <input name="title" id="examPlanTitleInput" required maxlength="200" placeholder="e.g. UPSC CSE 2027, NEET Preparation, 100 Days DSA">
-      </div>
-      <div class="field">
-        <label>Category</label>
-        <select name="category" id="examPlanCategorySelect">
-          <option value="Exam">Competitive Exam</option>
-          <option value="Academic">College / School Test</option>
-          <option value="Certification">Professional Certification</option>
-          <option value="Coding">Coding &amp; DSA Challenge</option>
-          <option value="Skill">Skill &amp; Language Mastery</option>
-          <option value="Fitness">Fitness / Health Goal</option>
-          <option value="Project">Long-Term Project</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Duration Preset *</label>
-        <select name="duration_type" id="examPlanDurationSelect">
-          <option value="1month">1 Month (30 Days Sprint)</option>
-          <option value="3months">3 Months (90 Days Term)</option>
-          <option value="6months">6 Months (Semester / Half-Year)</option>
-          <option value="12months" selected>12 Months (Full Year Mastery)</option>
-          <option value="custom">Custom Date Range</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Start Date *</label>
-        <input type="date" name="start_date" id="examPlanStartDate" required>
-      </div>
-      <div class="field">
-        <label>Target / Exam Date *</label>
-        <input type="date" name="target_date" id="examPlanTargetDate" required>
-      </div>
-      <div class="field full-span">
-        <label>Target Daily Study/Activity Hours (hrs/day)</label>
-        <input type="number" name="daily_hours" id="examPlanDailyHours" min="0.5" max="18" step="0.5" value="4">
-      </div>
-      <div class="field full-span">
-        <label>Goals &amp; Preparation Strategy (optional)</label>
-        <textarea name="description" id="examPlanDescription" rows="3" placeholder="Describe the syllabus, scoring target, or strategy..."></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="outline-small" id="cancelNewExamPlanModal">Cancel</button>
-        <button type="submit" class="primary-btn">Create Roadmap</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Add Daily Activity Modal -->
-<div id="newExamActivityModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:520px">
-    <div class="modal-heading">
-      <h2>＋ Add Daily Activity / Subject Task</h2>
-      <button id="closeExamActivityModal" class="icon-btn">×</button>
-    </div>
-    <form id="newExamActivityForm" class="modal-form">
-      <div class="field full-span">
-        <label>Activity Title *</label>
-        <input name="title" id="examActTitle" required maxlength="200" placeholder="e.g. Solve 30 Electrostatics MCQs, Read Polity Ch. 5">
-      </div>
-      <div class="field">
-        <label>Subject / Topic Tag</label>
-        <input name="subject" id="examActSubject" placeholder="e.g. Physics, History, Algorithms" maxlength="100">
-      </div>
-      <div class="field">
-        <label>Date *</label>
-        <input type="date" name="date" id="examActDate" required>
-      </div>
-      <div class="field full-span">
-        <label>Target Duration (Minutes)</label>
-        <input type="number" name="target_minutes" id="examActMinutes" min="5" max="1440" step="5" value="60">
-      </div>
-      <div class="field full-span">
-        <label>Notes / Resource Links</label>
-        <textarea name="notes" id="examActNotes" rows="2" placeholder="Formulas, chapters, or reference links..."></textarea>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="outline-small" id="cancelExamActivityModal">Cancel</button>
-        <button type="submit" class="primary-btn">Add Activity</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Smart Scheduler Modal -->
-<div id="smartSchedulerModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:640px">
-    <div class="modal-heading">
-      <h2>⚡ Smart Scheduler</h2>
-      <button id="closeSmartSchedulerModal" class="icon-btn">×</button>
-    </div>
-    <div class="smart-scheduler-body" style="padding:10px 0">
-      <p class="muted" style="margin:0 0 16px;font-size:13px">Select how much focused time you have right now. The smart scheduler prioritizes high-impact, non-blocked tasks to maximize what you accomplish.</p>
-      <div class="scheduler-controls-box">
-        <label style="font-weight:600;font-size:13px;display:block;margin-bottom:8px">Available Time (Minutes):</label>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <input type="number" id="schedulerMinutesInput" value="60" min="10" max="720" step="5" style="width:110px">
-          <div class="scheduler-presets">
-            <button type="button" class="preset-time-chip" data-preset-min="30">30m</button>
-            <button type="button" class="preset-time-chip active" data-preset-min="60">60m</button>
-            <button type="button" class="preset-time-chip" data-preset-min="90">90m</button>
-            <button type="button" class="preset-time-chip" data-preset-min="120">120m</button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Deadline</label>
+            <input type="datetime-local" id="taskDeadline" class="form-input">
           </div>
-          <button type="button" class="primary-btn" id="runSmartSchedulerBtn">Schedule Tasks</button>
+          <div class="form-group">
+            <label class="form-label">Estimated Hours</label>
+            <input type="number" id="taskDuration" class="form-input" step="0.5" value="2.0">
+          </div>
         </div>
-      </div>
-      <div id="schedulerResultsArea" class="scheduler-results-container" style="margin-top:20px">
-        <!-- Rendered dynamically -->
-      </div>
+
+        <div class="form-group">
+          <label class="form-label">Task Type</label>
+          <select id="taskTypeSelect" class="form-input" onchange="toggleDependencyPicker()">
+            <option value="Independent">Independent (Can start immediately)</option>
+            <option value="Dependent">Dependent (Requires a prerequisite task first)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="dependencyPickerGroup" style="display: none;">
+          <label class="form-label">Prerequisite Task (Must be completed first)</label>
+          <select id="prerequisiteTaskSelect" class="form-input"></select>
+          <div class="form-help-text">
+            🔒 This task will stay Locked/Blocked until the prerequisite task status is set to Completed.
+          </div>
+        </div>
+
+        <div class="form-group" id="taskStatusProgressGroup">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+              <label class="form-label">Task Status</label>
+              <select id="taskStatusSelect" class="form-input">
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Progress: <span id="taskProgressValueLabel">0%</span></label>
+              <input type="range" id="taskProgressInput" class="form-input" min="0" max="100" step="5" value="0" oninput="document.getElementById('taskProgressValueLabel').textContent = this.value + '%'" style="padding: 0.2rem;">
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="taskSubmitBtn" class="btn-primary">Save Task</button>
+      </form>
     </div>
   </div>
-</div>
 
-<!-- Critical Path Method (CPM) Modal -->
-<div id="criticalPathModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:880px;width:95%">
-    <div class="modal-heading">
-      <h2>📊 Critical Path Method (CPM) Analysis</h2>
-      <button id="closeCriticalPathModal" class="icon-btn">×</button>
-    </div>
-    <div class="cpm-modal-body" style="padding:10px 0">
-      <div class="cpm-metrics-row" id="cpmMetricsRow"></div>
-      <div class="cpm-chain-box">
-        <h4>🔥 Critical Path Sequence (Tasks with 0 Slack):</h4>
-        <div id="cpmChainDisplay" class="cpm-chain-display"></div>
+  <!-- Admin Add User Modal -->
+  <div id="adminAddUserModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add New User</h3>
+        <button class="modal-close-btn" onclick="closeModal('adminAddUserModal')">×</button>
       </div>
-      <div class="cpm-table-wrap">
-        <table class="cpm-table">
-          <thead>
-            <tr>
-              <th>Task</th>
-              <th>Duration</th>
-              <th>Early Start</th>
-              <th>Early Finish</th>
-              <th>Late Start</th>
-              <th>Late Finish</th>
-              <th>Slack / Float</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="cpmTableBody"></tbody>
-        </table>
-      </div>
+      <form onsubmit="handleAdminCreateUser(event)">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="adminNewUserName" class="form-input" required placeholder="User name">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Age</label>
+            <input type="number" id="adminNewUserAge" class="form-input" required value="21">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gender</label>
+            <select id="adminNewUserGender" class="form-input">
+              <option value="Male" selected>Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="adminNewUserEmail" class="form-input" required placeholder="user@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select id="adminNewUserRole" class="form-input">
+            <option value="user" selected>User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password (At least 6 characters)</label>
+          <input type="password" id="adminNewUserPassword" class="form-input" required minlength="6" placeholder="Initial password">
+        </div>
+        <button type="submit" class="btn-primary">Create User</button>
+      </form>
     </div>
   </div>
-</div>
 
-<!-- Confirmation Action Modal -->
-<div id="confirmActionModal" class="modal-backdrop hidden">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:440px">
-    <div class="modal-heading">
-      <h2 id="confirmModalTitle">Are you sure?</h2>
-      <button id="closeConfirmModal" class="icon-btn">×</button>
-    </div>
-    <div style="padding:12px 0 22px">
-      <p id="confirmModalDesc" class="muted" style="margin:0;line-height:1.5;font-size:14px">This action cannot be undone.</p>
-    </div>
-    <div class="modal-actions">
-      <button type="button" class="outline-small" id="cancelConfirmModalBtn">Cancel</button>
-      <button type="button" class="primary-btn" id="okConfirmModalBtn" style="background:var(--red);border-color:var(--red);color:#fff">Yes, Clear All</button>
+  <!-- Add Routine Modal -->
+  <div id="addRoutineModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Daily Routine</h3>
+        <button class="modal-close-btn" onclick="closeModal('addRoutineModal')">×</button>
+      </div>
+      <form onsubmit="handleSaveRoutine(event)">
+        <div class="form-group">
+          <label class="form-label">Routine Activity Title</label>
+          <input type="text" id="routineTitle" class="form-input" placeholder="e.g. Coding Practice" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Routine Type</label>
+            <select id="routineType" class="form-input">
+              <option value="morning">Morning Routine</option>
+              <option value="custom" selected>Custom Routine</option>
+              <option value="evening">Evening Routine</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Scheduled Time</label>
+            <input type="text" id="routineTime" class="form-input" placeholder="e.g. 06:00 AM" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Add Routine</button>
+      </form>
     </div>
   </div>
-</div>
 
-<div id="notificationPanel" class="notification-panel hidden"><div class="panel-heading"><h3>Notifications</h3><button id="markAllRead" class="text-button">Mark all read</button><button id="closeNotifications" class="icon-btn">×</button></div><div id="notificationItems"></div><form id="broadcastForm" class="broadcast-form"><h4>Admin announcement</h4><input name="title" placeholder="Announcement title" required maxlength="160"><textarea name="message" placeholder="Message to all users" required maxlength="2000"></textarea><button class="outline-small" type="submit">Broadcast to users</button><p class="fine-print">Only the account matching ADMIN_EMAIL in .env can send this.</p></form></div>
-<script src="/js/app.js"></script></body></html>
+  <!-- Add Note Modal -->
+  <div id="addNoteModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create / Edit Note</h3>
+        <button class="modal-close-btn" onclick="closeModal('addNoteModal')">×</button>
+      </div>
+      <form onsubmit="handleSaveNote(event)">
+        <input type="hidden" id="noteEditId">
+        <div class="form-group">
+          <label class="form-label">Note Title</label>
+          <input type="text" id="noteTitle" class="form-input" placeholder="e.g. Python OOP Concepts" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input type="text" id="noteCategory" class="form-input" placeholder="e.g. Python, BCA, Formulas" value="General">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Note Content</label>
+          <textarea id="noteContent" class="form-input" rows="6" placeholder="Write markdown or plain notes here..." required></textarea>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" id="notePinned" style="width: 18px; height: 18px;">
+          <label for="notePinned" style="font-size: 0.9rem; font-weight: 600;">📌 Pin this note to top</label>
+        </div>
+        <button type="submit" class="btn-primary">Save Note</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Goal / Plan Modal -->
+  <div id="addPlanModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Plan</h3>
+        <button class="modal-close-btn" onclick="closeModal('addPlanModal')">×</button>
+      </div>
+      <form onsubmit="handleSavePlan(event)">
+        <div class="form-group">
+          <label class="form-label">Plan / Goal Name</label>
+          <input type="text" id="planGoalName" class="form-input" placeholder="e.g. NIMCET Preparation" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="planCategory" class="form-input">
+              <option value="Academic">Academic</option>
+              <option value="Skill">Skill</option>
+              <option value="Career">Career</option>
+              <option value="Personal">Personal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration Label</label>
+            <input type="text" id="planDuration" class="form-input" placeholder="e.g. 3 Months" value="3 Months">
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input type="date" id="planStartDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Date</label>
+            <input type="date" id="planTargetDate" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="planDesc" class="form-input" rows="2" placeholder="Brief target description..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Create Roadmap</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Log Study Session Modal -->
+  <div id="prepSessionModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Log Preparation Session</h3>
+        <button class="modal-close-btn" onclick="closeModal('prepSessionModal')">×</button>
+      </div>
+      <form onsubmit="handleSavePrepSession(event)">
+        <div class="form-group">
+          <label class="form-label">Topic / Subject</label>
+          <input type="text" id="sessionTopic" class="form-input" placeholder="e.g. Discrete Math - Set Theory" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Planned Time (Minutes)</label>
+            <input type="number" id="sessionPlannedMin" class="form-input" value="90" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Actual Time Spent (Minutes)</label>
+            <input type="number" id="sessionActualMin" class="form-input" value="85" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea id="sessionNotes" class="form-input" rows="2" placeholder="What did you accomplish?"></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Log Session</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Schedule Slot Modal -->
+  <div id="addScheduleModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Routine Entry</h3>
+        <button class="modal-close-btn" onclick="closeModal('addScheduleModal')">×</button>
+      </div>
+      <form onsubmit="handleSaveSchedule(event)">
+        <div class="form-group">
+          <label class="form-label">Subject / Activity</label>
+          <input type="text" id="scheduleTitle" class="form-input" placeholder="e.g. Operating Systems Lecture" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Day of Week</label>
+          <select id="scheduleDay" class="form-input">
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+            <option value="Daily" selected>Daily</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Start Time</label>
+            <input type="time" id="scheduleStartTime" class="form-input" value="09:00" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">End Time</label>
+            <input type="time" id="scheduleEndTime" class="form-input" value="10:30" required>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Save Time Slot</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Main Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>

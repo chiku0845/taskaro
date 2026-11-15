@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" fill="none">
+  <!-- Outer Target Ring -->
+  <circle cx="19" cy="25" r="13" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+  <!-- Inner Target Ring -->
+  <circle cx="19" cy="25" r="7.5" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Center Bullseye -->
+  <circle cx="19" cy="25" r="2.6" fill="#ffffff"/>
+  
+  <!-- Dart Shaft & Point hitting the center -->
+  <path d="M19 25 L30 14" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+  
+  <!-- Dart Feathers / Flights -->
+  <path d="M27 17 L25 12 L29 13 L34 8 L35 13 L31 14 L33 19 Z" fill="#ffffff"/>
+</svg>
