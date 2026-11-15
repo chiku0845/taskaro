@@ -1015,9 +1015,20 @@ select.form-input option {
   text-align: left;
 }
 
+.admin-nav-item svg {
+  flex-shrink: 0;
+  stroke: currentColor;
+  transition: transform 0.2s, stroke 0.2s;
+}
+
 .admin-nav-item:hover {
   background: #1e293b;
   color: #ffffff;
+}
+
+.admin-nav-item:hover svg {
+  stroke: #ffffff;
+  transform: translateX(2px);
 }
 
 .admin-nav-item.active {
@@ -1025,6 +1036,10 @@ select.form-input option {
   color: #ffffff;
   font-weight: 600;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.admin-nav-item.active svg {
+  stroke: #ffffff;
 }
 
 .admin-sidebar-bottom {
