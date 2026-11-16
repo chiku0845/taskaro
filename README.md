@@ -1,55 +1,75 @@
 # TASKARO - Personal Productivity & Task Management Platform
 
-A full-stack, enterprise-grade task management system developed from scratch according to the **TASKARO Complete Product Requirements** specification and user interface design guidelines.
+A full-stack, enterprise-grade task management system built with **Python, Django, Django REST Framework, and PostgreSQL**.
+
+---
+
+## 🛠️ Tools & Technologies
+
+| Category | Technology |
+|---|---|
+| **Frontend** | HTML5 |
+| **Styling** | CSS3 (Modern Responsive Design System) |
+| **Frontend Programming** | JavaScript (Vanilla ES6+) |
+| **Backend Language** | Python 3.12+ |
+| **Backend Framework** | Django 5.1+ |
+| **API Development** | Django REST Framework (DRF) |
+| **Database** | PostgreSQL (Production) / SQLite (Local Fallback) |
+| **Authentication** | Django Auth + PBKDF2 Hashing + Database-backed Bearer Tokens |
+| **Google Login** | Google OAuth 2.0 |
+| **Email OTP** | SMTP Verification |
+| **AI Chatbot** | Python AI Assistant Engine |
+| **Charts & Graphs** | Chart.js |
+| **Deployment / WSGI** | Railway / Gunicorn / WhiteNoise |
 
 ---
 
 ## 🌟 Key Features
 
-### 1. Role-Based Access Control (Admin & User Portals)
-- **Separate Portals on the Same PC**: Easily switch between **User Portal** (`👤`) and **Admin Portal** (`🛡️`) on the login screen.
-- **Admin Capabilities**: User management (create, activate, deactivate), task creation and cross-user assignment, task monitoring with progress tracking, reports & analytics with charts, audit logs, and Admin AI Assistant.
-- **User Capabilities**: Personal productivity dashboard matching the visual design (total tasks, pending, in progress, completed, and exam roadmap countdown), task management with dependencies, Routine & schedule, Plans & roadmaps, notes, direct messaging with admin, and personal Ask AI assistant.
+### 1. Dual-Portal Role Isolation (Admin & User Portals)
+- **Strict Role-Based Isolation**: Admins cannot log into the User Portal, and standard Users cannot log into the Admin Portal. Cross-portal access attempts are strictly rejected by both frontend validation and backend DRF security (`HTTP 403 Forbidden`).
+- **Admin Capabilities**: User management (create, activate, deactivate), task creation and cross-user/cross-team assignment, team & project management, progress tracking, reports with Chart.js analytics, audit activity logs, and Admin AI Assistant.
+- **User Capabilities**: Personal dashboard matching the modern UI (total tasks, pending, in progress, completed, and exam roadmap countdown), task dependencies, Routine & daily timetable, Plans & roadmaps, notes, direct messaging with admin, and personal Ask AI assistant.
 
-### 2. Sign Up & Credential Validation
-- **Required Fields**:
-  - **Full Name**
-  - **Age** (e.g., 21)
-  - **Email Address**
-  - **Role**: Standard User or Admin
-  - **Password**: Secure 6-character requirement (supports digits, letters, and special characters)
-  - **Confirm Password** verification
-- **Security**: Cryptographically hashed using PBKDF2 with unique salts. No plaintext passwords stored.
+### 2. Teams & Projects
+- **Team Management**: Create teams, assign members, and manage collaborative team tasks.
+- **Project Tracking**: Group tasks under structured projects with progress tracking.
 
-### 3. 100% Reliable Local Data Persistence
-- Uses **native SQLite** (`data/taskaro.db`) with Write-Ahead Logging (`WAL`) mode.
-- **Permanent Storage**: All tasks, users, daily routines, exam roadmaps, notes, timetable slots, and activity logs are saved directly to the database on disk.
-- **No Data Loss**: Whether you close the browser, turn off your PC, or reopen the application 4 or 10 days later, all your inserted data remains 100% intact!
+### 3. Sign Up & Security
+- **Required Fields**: Full Name, Age, Email Address, Role (User or Admin), Password (PBKDF2 SHA-512 salted hash).
+- **Authentication**: Database-backed bearer tokens (`AuthToken`) ensuring seamless multi-worker session persistence.
+- **Email OTP**: SMTP-based 6-digit one-time password verification with automatic expiration.
+- **Google OAuth 2.0**: Direct sign-in with Google credentials.
 
 ### 4. Independent vs. Dependent Tasks
 - **Independent Tasks**: Can be started immediately without prerequisites.
 - **Dependent Tasks**: Require a prerequisite task to be completed first.
   - Automatically marked as **`🔒 Blocked / Locked`** until the prerequisite task is finished.
-  - Once the prerequisite task is marked **Completed**, any dependent tasks **automatically unlock** and send a notification!
+  - Once the prerequisite task is marked **Completed**, any dependent tasks **automatically unlock**!
 
 ---
 
-## 🚀 How to Run the Application
+## 🚀 How to Run the Application Locally
 
 ### Prerequisites
-- Node.js (version 20, 22, or 24+) installed on your PC.
+- Python 3.10+ installed on your PC.
 
 ### Quick Start
-Open PowerShell or Command Prompt in the `taskaro` folder and run:
+Open PowerShell or Terminal in the `taskaro` folder:
 
 ```bash
-# Start the server
-npm start
-```
+# 1. Activate virtual environment (if using venv)
+.\venv\Scripts\activate   # Windows
+# or: source venv/bin/activate  # macOS / Linux
 
-Or directly with Node:
-```bash
-node server.js
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Apply database migrations
+python manage.py migrate
+
+# 4. Start the Django development server
+python manage.py runserver 1234
 ```
 
 Then open your browser and navigate to:
@@ -69,8 +89,8 @@ You can click the one-click quick demo buttons on the login screen or enter manu
 
 | Portal | Email | Password | Role | Description |
 |---|---|---|---|---|
-| **Admin Portal** | `admin@taskaro.com` | `admin123` | Administrator | System-wide dashboard, assign tasks to any user, user management, activity logs |
-| **User Portal** | `chiku@taskaro.com` | `user123` | Student / User | Personal dashboard matching TaskMind design, 8 tasks, exam roadmap, routines |
+| **Admin Portal** | `admin@taskaro.com` | `admin123` | Administrator | System-wide dashboard, team & project management, assign tasks, user management, activity logs |
+| **User Portal** | `chiku@taskaro.com` | `user123` | Student / User | Personal dashboard, daily routine, timetable, roadmaps, AI assistant |
 | **User Portal** | `prince@taskaro.com` | `user123` | Student / User | Team member account |
 
 ---
@@ -79,24 +99,35 @@ You can click the one-click quick demo buttons on the login screen or enter manu
 
 ```
 taskaro/
-├── data/
-│   └── taskaro.db          # Persistent SQLite database (WAL mode)
-├── public/
-│   ├── index.html          # SPA layout (Auth screen + User Panel + Admin Console)
-│   ├── styles.css          # Design system matching TaskMind & Dark/Light mode
-│   └── app.js              # Client state, API handlers, and UI rendering
-├── server.js               # Express REST API, auth middleware, and AI engine
-├── db.js                   # Database initialization, schema & seed data
-├── package.json            # Project manifest
-└── README.md               # Documentation & usage guide
+├── api/                        # Django REST Framework application
+│   ├── models.py               # Models: UserAccount, Task, Team, Project, AuthToken, EmailOtp, etc.
+│   ├── views.py                # REST API views & business logic
+│   ├── serializers.py          # Model serializers for JSON API responses
+│   ├── authentication.py       # Bearer token auth, PBKDF2 hashing, SMTP OTP
+│   ├── urls.py                 # API routing endpoints
+│   └── migrations/             # Database schema migrations
+├── taskaro_core/               # Django project core settings
+│   ├── settings.py             # PostgreSQL / SQLite, CORS, WhiteNoise, DRF config
+│   ├── urls.py                 # Core routing & static file serving
+│   ├── wsgi.py                 # WSGI entrypoint for Gunicorn
+│   └── asgi.py                 # ASGI entrypoint
+├── public/                     # Static frontend SPA
+│   ├── index.html              # HTML5 structure (Auth, User Dashboard, Admin Portal)
+│   ├── styles.css              # CSS3 design system & themes
+│   ├── app.js                  # Frontend state, API client, and dynamic UI rendering
+│   └── demo.html               # Presentation & feature showcase
+├── manage.py                   # Django CLI management entrypoint
+├── requirements.txt            # Python dependencies (Django, DRF, psycopg2, whitenoise, gunicorn)
+├── Procfile                    # Production deployment command for Railway
+└── README.md                   # Documentation & setup guide
 ```
 
 ---
 
 ## 🛠️ Verification & Testing
 
-To run the automated database and business logic verification test suite:
+To run the automated verification test suite:
 
 ```bash
-node test_api.js
+python scratch/verify_django.py
 ```
