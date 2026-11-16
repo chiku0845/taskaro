@@ -213,6 +213,12 @@
   padding: 0;
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   background-color: var(--bg-page);
@@ -220,6 +226,9 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 /* Layout Utilities */
@@ -227,6 +236,10 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* ----------------------------------------------------
@@ -711,55 +724,44 @@ select.form-input option {
 }
 
 /* ----------------------------------------------------
-   TOP NAVIGATION BAR (User Panel - Image 2)
+   TOP NAVIGATION BAR (User Panel - Responsive & Modern)
    ---------------------------------------------------- */
 .top-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 2.5rem;
+  padding: 0.75rem 1.75rem;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 40;
+  gap: 1rem;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .nav-links-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* ==========================================================================
-   NAVBAR & BUTTONS MATCHING USER IMAGE (media_1794765384557_e37f9e43.png)
-   ========================================================================== */
-
-.top-navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 2.5rem;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  position: sticky;
-  top: 0;
-  z-index: 40;
-}
-
-.nav-links-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
+.nav-links-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 1rem;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
   border-radius: var(--radius-md);
-  font-size: 0.925rem;
+  font-size: 0.9rem;
   font-weight: 550;
   color: #64748b;
   cursor: pointer;
@@ -767,6 +769,8 @@ select.form-input option {
   transition: all 0.2s;
   border: none;
   background: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-item:hover {
@@ -832,19 +836,21 @@ select.form-input option {
 .nav-right-controls {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .nav-search-box {
   position: relative;
   display: flex;
   align-items: center;
-  width: 240px;
+  width: 180px;
+  transition: width 0.2s;
 }
 
 .nav-search-input {
   width: 100%;
-  padding: 0.5rem 2rem 0.5rem 2.25rem;
+  padding: 0.5rem 1.75rem 0.5rem 2.25rem;
   background: #f1f5f9;
   border: 1px solid transparent;
   border-radius: var(--radius-full);
@@ -852,6 +858,12 @@ select.form-input option {
   color: var(--text-main);
   outline: none;
   transition: all 0.2s;
+}
+
+.nav-search-input:focus {
+  background: var(--bg-card);
+  border-color: var(--primary);
+  width: 220px;
 }
 
 [data-theme="dark"] .nav-search-input {
@@ -1078,10 +1090,12 @@ select.form-input option {
    ---------------------------------------------------- */
 .main-content {
   flex: 1;
-  max-width: 1420px;
+  max-width: 1400px;
   width: 100%;
   margin: 0 auto;
-  padding: 2.25rem 2.5rem;
+  padding: 1.75rem 1.5rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* Workspace Banner */
@@ -2069,9 +2083,26 @@ select.form-input option {
 .span-6 { grid-column: span 6; }
 .span-12 { grid-column: span 12; }
 
-@media (max-width: 1024px) {
-  .span-8, .span-4, .span-3, .span-6 {
-    grid-column: span 12;
+@media (max-width: 1200px) {
+  .span-8 { grid-column: span 12; }
+  .span-4 { grid-column: span 12; }
+  .span-3 { grid-column: span 6; }
+}
+
+@media (max-width: 640px) {
+  .span-3 { grid-column: span 12; }
+  .bento-grid { gap: 1rem; }
+}
+
+.dashboard-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 1.75rem;
+}
+
+@media (max-width: 900px) {
+  .dashboard-two-col {
+    grid-template-columns: 1fr;
   }
 }
 

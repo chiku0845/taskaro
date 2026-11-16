@@ -99,9 +99,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
         fields = ['schedule_id', 'user_id', 'title', 'day_of_week', 'start_time', 'end_time', 'activity_type', 'color', 'linked_task_id', 'created_at']
 
 class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(read_only=True, default='')
+    team_name = serializers.CharField(read_only=True, default='')
+
     class Meta:
         model = Message
-        fields = ['message_id', 'sender_id', 'receiver_id', 'content', 'read_status', 'created_at']
+        fields = ['message_id', 'sender_id', 'receiver_id', 'team_id', 'content', 'read_status', 'created_at', 'sender_name', 'team_name']
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:

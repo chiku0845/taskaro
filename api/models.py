@@ -132,7 +132,8 @@ class Schedule(models.Model):
 class Message(models.Model):
     message_id = models.CharField(max_length=100, primary_key=True)
     sender_id = models.CharField(max_length=100)
-    receiver_id = models.CharField(max_length=100)
+    receiver_id = models.CharField(max_length=100, null=True, blank=True)
+    team_id = models.CharField(max_length=100, null=True, blank=True)
     content = models.TextField()
     read_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

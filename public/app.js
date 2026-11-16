@@ -1772,32 +1772,77 @@ function renderAdminReportsView() {
 }
 
 // ----------------------------------------------------
-// ADMIN CONSOLE: MESSAGES
+// ADMIN CONSOLE: MESSAGES & TEAM CHANNELS
 // ----------------------------------------------------
 async function loadAdminMessages() {
   try {
-    const data = await apiCall('/messages');
-    const container = document.getElementById('adminConversationsList');
-    if (!container) return;
-
-    const list = data.conversations || [];
-    if (list.length === 0) {
-      container.innerHTML = '<div style="color: var(--text-muted); padding: 1rem;">No users available for chat</div>';
-      return;
+    // 1. Load Teams for Group Chat
+    const teamsData = await apiCall('/teams');
+    const teams = teamsData.teams || [];
+    const teamListEl = document.getElementById('adminTeamChannelsList');
+    if (teamListEl) {
+      if (teams.length === 0) {
+        teamListEl.innerHTML = '<div style="font-size: 0.785rem; color: var(--text-muted); padding: 0.5rem;">No groups created yet. Create a team in Teams to start group chat!</div>';
+      } else {
+        teamListEl.innerHTML = teams.map(t => `
+          <div style="padding: 0.65rem 0.75rem; border-radius: 8px; cursor: pointer; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; ${state.selectedChatTeamId === t.team_id ? 'background: #eff6ff; font-weight: 700; color: #2563eb;' : 'background: var(--bg-card);'}" onclick="selectAdminTeamChat('${t.team_id}', '${escapeHtml(t.name)}', ${t.member_count})">
+            <div>
+              <div style="font-size: 0.88rem;">👥 ${escapeHtml(t.name)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${t.member_count} member${t.member_count === 1 ? '' : 's'}</div>
+            </div>
+            <span class="badge-tag" style="font-size: 0.7rem; padding: 2px 6px;">Group</span>
+          </div>
+        `).join('');
+      }
     }
 
-    container.innerHTML = list.map(u => `
-      <div style="padding: 0.75rem; border-radius: 8px; cursor: pointer; border-bottom: 1px solid var(--border-color); ${state.selectedChatUserId === u.user_id ? 'background: #eff6ff;' : ''}" onclick="selectAdminUserChat('${u.user_id}', '${escapeHtml(u.name)}')">
-        <div style="font-weight: 600; font-size: 0.9rem;">${escapeHtml(u.name)}</div>
-        <div style="font-size: 0.785rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-          ${escapeHtml(u.last_message || 'Start conversation...')}
-        </div>
-      </div>
-    `).join('');
-
-    if (!state.selectedChatUserId && list.length > 0) {
-      selectAdminUserChat(list[0].user_id, list[0].name);
+    // 2. Load Users for Direct Messaging
+    const usersData = await apiCall('/users');
+    const users = (usersData.users || []).filter(u => u.role !== 'admin');
+    const userListEl = document.getElementById('adminConversationsList');
+    if (userListEl) {
+      if (users.length === 0) {
+        userListEl.innerHTML = '<div style="font-size: 0.785rem; color: var(--text-muted); padding: 0.5rem;">No users registered yet</div>';
+      } else {
+        userListEl.innerHTML = users.map(u => `
+          <div style="padding: 0.65rem 0.75rem; border-radius: 8px; cursor: pointer; margin-bottom: 4px; ${state.selectedChatUserId === u.user_id && !state.selectedChatTeamId ? 'background: #eff6ff; font-weight: 700; color: #2563eb;' : 'background: var(--bg-card);'}" onclick="selectAdminUserChat('${u.user_id}', '${escapeHtml(u.name)}')">
+            <div style="font-size: 0.88rem;">👤 ${escapeHtml(u.name)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(u.email)}</div>
+          </div>
+        `).join('');
+      }
     }
+
+    if (!state.selectedChatTeamId && !state.selectedChatUserId) {
+      if (teams.length > 0) {
+        selectAdminTeamChat(teams[0].team_id, teams[0].name, teams[0].member_count);
+      } else if (users.length > 0) {
+        selectAdminUserChat(users[0].user_id, users[0].name);
+      }
+    }
+  } catch (err) {
+    console.error('loadAdminMessages error:', err);
+  }
+}
+
+async function selectAdminTeamChat(teamId, teamName, memberCount) {
+  state.selectedChatTeamId = teamId;
+  state.selectedChatUserId = null;
+  state.selectedChatType = 'team';
+
+  const nameEl = document.getElementById('adminChatRecipientName');
+  const subEl = document.getElementById('adminChatRecipientSubtext');
+  const badgeEl = document.getElementById('adminChatBadge');
+  if (nameEl) nameEl.textContent = `👥 Team: ${teamName}`;
+  if (subEl) subEl.textContent = `All ${memberCount || 'group'} members will receive messages sent here. Only members can see this channel.`;
+  if (badgeEl) {
+    badgeEl.textContent = 'Team Group Chat';
+    badgeEl.className = 'badge-tag badge-primary';
+  }
+
+  try {
+    const data = await apiCall(`/messages?team_id=${teamId}`);
+    renderAdminChatMessages(data.messages || [], `Team ${teamName}`);
   } catch (err) {
     console.error(err);
   }
@@ -1805,34 +1850,50 @@ async function loadAdminMessages() {
 
 async function selectAdminUserChat(userId, userName) {
   state.selectedChatUserId = userId;
-  document.getElementById('adminChatRecipientName').textContent = `Chat with ${userName}`;
+  state.selectedChatTeamId = null;
+  state.selectedChatType = 'user';
+
+  const nameEl = document.getElementById('adminChatRecipientName');
+  const subEl = document.getElementById('adminChatRecipientSubtext');
+  const badgeEl = document.getElementById('adminChatBadge');
+  if (nameEl) nameEl.textContent = `👤 Direct Message: ${userName}`;
+  if (subEl) subEl.textContent = `Private 1-on-1 conversation with ${userName}`;
+  if (badgeEl) {
+    badgeEl.textContent = 'Direct Message';
+    badgeEl.className = 'badge-tag';
+  }
+
   try {
-    const data = await apiCall(`/messages?userId=${userId}`);
-    const box = document.getElementById('adminThreadMessagesBox');
-    if (!box) return;
-
-    const messages = data.messages || [];
-    if (messages.length === 0) {
-      box.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">No messages exchanged yet. Send instructions below.</div>';
-      return;
-    }
-
-    box.innerHTML = messages.map(m => {
-      const isMe = m.sender_id === state.user.userId;
-      return `
-        <div class="chat-bubble ${isMe ? 'user' : 'assistant'}">
-          <div style="font-weight: 700; font-size: 0.75rem; margin-bottom: 0.2rem;">${isMe ? 'You (Admin)' : escapeHtml(m.sender_name || 'User')}</div>
-          ${escapeHtml(m.content)}
-          <div style="font-size: 0.7rem; opacity: 0.7; text-align: right; margin-top: 0.25rem;">
-            ${new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </div>
-        </div>
-      `;
-    }).join('');
-    box.scrollTop = box.scrollHeight;
+    const data = await apiCall(`/messages?user_id=${userId}`);
+    renderAdminChatMessages(data.messages || [], userName);
   } catch (err) {
     console.error(err);
   }
+}
+
+function renderAdminChatMessages(messages, targetName) {
+  const box = document.getElementById('adminThreadMessagesBox');
+  if (!box) return;
+
+  if (messages.length === 0) {
+    box.innerHTML = `<div style="color: var(--text-muted); text-align: center; margin-top: 3rem;">No messages yet in <strong>${escapeHtml(targetName)}</strong>. Send instructions or an update below!</div>`;
+    return;
+  }
+
+  box.innerHTML = messages.map(m => {
+    const isMe = m.sender_id === state.user.userId;
+    const senderLabel = isMe ? 'You (Admin)' : escapeHtml(m.sender_name || 'Member');
+    return `
+      <div class="chat-bubble ${isMe ? 'user' : 'assistant'}">
+        <div style="font-weight: 700; font-size: 0.75rem; margin-bottom: 0.2rem; color: ${isMe ? '#ffffff' : 'var(--primary)'};">${senderLabel}</div>
+        ${escapeHtml(m.content)}
+        <div style="font-size: 0.7rem; opacity: 0.7; text-align: right; margin-top: 0.25rem;">
+          ${m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  box.scrollTop = box.scrollHeight;
 }
 
 async function handleAdminSendMessage(event) {
@@ -1842,40 +1903,152 @@ async function handleAdminSendMessage(event) {
   if (!content) return;
 
   try {
-    await apiCall('/messages', 'POST', { receiver_id: state.selectedChatUserId, content });
+    const payload = { content };
+    if (state.selectedChatType === 'team' && state.selectedChatTeamId) {
+      payload.team_id = state.selectedChatTeamId;
+    } else if (state.selectedChatUserId) {
+      payload.receiver_id = state.selectedChatUserId;
+    } else {
+      showToast('Please select a team or user first', 'error');
+      return;
+    }
+
+    await apiCall('/messages', 'POST', payload);
     input.value = '';
-    await selectAdminUserChat(state.selectedChatUserId, document.getElementById('adminChatRecipientName').textContent.replace('Chat with ', ''));
+
+    if (state.selectedChatType === 'team') {
+      const data = await apiCall(`/messages?team_id=${state.selectedChatTeamId}`);
+      renderAdminChatMessages(data.messages || [], 'Team');
+    } else {
+      const data = await apiCall(`/messages?user_id=${state.selectedChatUserId}`);
+      renderAdminChatMessages(data.messages || [], 'Direct');
+    }
   } catch (err) {
     showToast(err.message, 'error');
   }
 }
 
 // ----------------------------------------------------
-// USER MESSAGES (DIRECT ADMIN <-> USER)
+// USER MESSAGES (TEAMS & DIRECT ADMIN)
 // ----------------------------------------------------
 async function loadUserMessages() {
-  const thread = document.getElementById('userMessagesThread');
-  if (!thread) return;
   try {
-    const data = await apiCall('/messages');
-    const messages = data.messages || [];
-    if (messages.length === 0) {
-      thread.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">No messages exchanged yet. Send an update or question to your administrator below!</div>';
-      return;
+    // 1. Fetch user's teams (server filters only teams user belongs to)
+    const teamsData = await apiCall('/teams');
+    const teams = teamsData.teams || [];
+    const teamListEl = document.getElementById('userTeamChannelsList');
+    if (teamListEl) {
+      if (teams.length === 0) {
+        teamListEl.innerHTML = '<div style="font-size: 0.785rem; color: var(--text-muted); padding: 0.35rem 0.5rem;">No groups assigned yet. When an admin adds you to a team, your group channels will appear here!</div>';
+      } else {
+        teamListEl.innerHTML = teams.map(t => `
+          <div style="padding: 0.65rem 0.75rem; border-radius: 8px; cursor: pointer; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; ${state.selectedUserChatTeamId === t.team_id ? 'background: #eff6ff; font-weight: 700; color: #2563eb;' : 'background: var(--bg-card);'}" onclick="selectUserTeamChat('${t.team_id}', '${escapeHtml(t.name)}', ${t.member_count})">
+            <div>
+              <div style="font-size: 0.88rem;">👥 ${escapeHtml(t.name)}</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${t.member_count} member${t.member_count === 1 ? '' : 's'}</div>
+            </div>
+            <span class="badge-tag" style="font-size: 0.7rem; padding: 2px 6px;">Group</span>
+          </div>
+        `).join('');
+      }
     }
-    thread.innerHTML = messages.map(m => {
-      const isMe = m.sender_id === state.user.userId;
-      return `
-        <div class="chat-bubble ${isMe ? 'user' : 'assistant'}">
-          <div style="font-weight: 700; font-size: 0.75rem; margin-bottom: 0.2rem;">${isMe ? 'You' : 'System Administrator'}</div>
-          ${escapeHtml(m.content)}
+
+    // 2. Direct Messages (with System Admin)
+    const dmListEl = document.getElementById('userDirectChannelsList');
+    if (dmListEl) {
+      dmListEl.innerHTML = `
+        <div style="padding: 0.65rem 0.75rem; border-radius: 8px; cursor: pointer; ${!state.selectedUserChatTeamId ? 'background: #eff6ff; font-weight: 700; color: #2563eb;' : 'background: var(--bg-card);'}" onclick="selectUserAdminChat()">
+          <div style="font-size: 0.88rem;">🛡️ System Administrator</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">Direct 1-on-1 Help & Updates</div>
         </div>
       `;
-    }).join('');
-    thread.scrollTop = thread.scrollHeight;
+    }
+
+    if (state.selectedUserChatTeamId) {
+      const activeTeam = teams.find(t => t.team_id === state.selectedUserChatTeamId);
+      if (activeTeam) {
+        selectUserTeamChat(activeTeam.team_id, activeTeam.name, activeTeam.member_count);
+      } else {
+        selectUserAdminChat();
+      }
+    } else {
+      selectUserAdminChat();
+    }
   } catch (err) {
-    console.error('Failed to load user messages:', err);
+    console.error('loadUserMessages error:', err);
   }
+}
+
+async function selectUserTeamChat(teamId, teamName, memberCount) {
+  state.selectedUserChatTeamId = teamId;
+  const nameEl = document.getElementById('userChatRecipientName');
+  const subEl = document.getElementById('userChatRecipientSubtext');
+  const badgeEl = document.getElementById('userChatChannelBadge');
+  const avatarEl = document.getElementById('userChatRecipientAvatar');
+
+  if (nameEl) nameEl.textContent = `👥 ${teamName}`;
+  if (subEl) subEl.textContent = `Team channel • ${memberCount || ''} members`;
+  if (badgeEl) {
+    badgeEl.textContent = 'Team Group Chat';
+    badgeEl.className = 'badge-tag badge-primary';
+  }
+  if (avatarEl) avatarEl.textContent = '👥';
+
+  try {
+    const data = await apiCall(`/messages?team_id=${teamId}`);
+    renderUserChatMessages(data.messages || [], teamName);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function selectUserAdminChat() {
+  state.selectedUserChatTeamId = null;
+  const nameEl = document.getElementById('userChatRecipientName');
+  const subEl = document.getElementById('userChatRecipientSubtext');
+  const badgeEl = document.getElementById('userChatChannelBadge');
+  const avatarEl = document.getElementById('userChatRecipientAvatar');
+
+  if (nameEl) nameEl.textContent = '🛡️ System Administrator';
+  if (subEl) subEl.textContent = 'Direct private thread with Administrator';
+  if (badgeEl) {
+    badgeEl.textContent = 'Direct Message';
+    badgeEl.className = 'badge-tag';
+  }
+  if (avatarEl) avatarEl.textContent = '🛡️';
+
+  try {
+    const data = await apiCall('/messages');
+    const dmMsgs = (data.messages || []).filter(m => !m.team_id);
+    renderUserChatMessages(dmMsgs, 'System Administrator');
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function renderUserChatMessages(messages, channelName) {
+  const thread = document.getElementById('userMessagesThread');
+  if (!thread) return;
+
+  if (messages.length === 0) {
+    thread.innerHTML = `<div style="color: var(--text-muted); text-align: center; margin-top: 3rem;">No messages yet in <strong>${escapeHtml(channelName)}</strong>. Post an update or ask a question below!</div>`;
+    return;
+  }
+
+  thread.innerHTML = messages.map(m => {
+    const isMe = m.sender_id === state.user.userId;
+    const senderLabel = isMe ? 'You' : escapeHtml(m.sender_name || 'Member');
+    return `
+      <div class="chat-bubble ${isMe ? 'user' : 'assistant'}">
+        <div style="font-weight: 700; font-size: 0.75rem; margin-bottom: 0.2rem; color: ${isMe ? '#ffffff' : 'var(--primary)'};">${senderLabel}</div>
+        ${escapeHtml(m.content)}
+        <div style="font-size: 0.7rem; opacity: 0.7; text-align: right; margin-top: 0.25rem;">
+          ${m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  thread.scrollTop = thread.scrollHeight;
 }
 
 async function handleUserSendMessage(event) {
@@ -1885,9 +2058,20 @@ async function handleUserSendMessage(event) {
   if (!content) return;
 
   try {
-    await apiCall('/messages', 'POST', { content });
+    const payload = { content };
+    if (state.selectedUserChatTeamId) {
+      payload.team_id = state.selectedUserChatTeamId;
+    }
+    await apiCall('/messages', 'POST', payload);
     input.value = '';
-    await loadUserMessages();
+
+    if (state.selectedUserChatTeamId) {
+      const data = await apiCall(`/messages?team_id=${state.selectedUserChatTeamId}`);
+      renderUserChatMessages(data.messages || [], 'Team');
+    } else {
+      const data = await apiCall('/messages');
+      renderUserChatMessages((data.messages || []).filter(m => !m.team_id), 'System Administrator');
+    }
   } catch (err) {
     showToast(err.message, 'error');
   }

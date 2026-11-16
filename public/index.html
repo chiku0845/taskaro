@@ -224,13 +224,6 @@
         <div style="font-size: 0.75rem; color: var(--text-light); text-align: center; margin-top: 1.5rem; letter-spacing: 0.05em;">
           Secure • Simple • Productive
         </div>
-
-        <!-- Quick Fill Demo Accounts -->
-        <div class="demo-credentials-box">
-          <div style="font-weight: 700; margin-bottom: 0.4rem; color: var(--text-muted);">Quick Demo Login (One-click fill):</div>
-          <span class="demo-chip" onclick="quickFillLogin('admin@taskaro.com', 'admin123', 'admin')">🛡️ Admin: admin@taskaro.com</span>
-          <span class="demo-chip" onclick="quickFillLogin('chiku@taskaro.com', 'user123', 'user')">👤 User: chiku@taskaro.com</span>
-        </div>
       </div>
     </div>
   </div>
@@ -465,7 +458,7 @@
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <div class="dashboard-two-col">
           <div>
             <div class="section-header-row">
               <h2 class="section-title">Today's Assigned Tasks</h2>
@@ -580,36 +573,48 @@
         <div id="fullNotesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;"></div>
       </section>
 
-      <!-- USER MESSAGES TAB (Direct Admin <-> User Communication) -->
+      <!-- USER MESSAGES TAB (Team Groups & Direct Communication) -->
       <section id="tab-messages" class="tab-pane" style="display: none;">
         <div class="workspace-banner">
           <div>
-            <div class="workspace-tag">DIRECT INBOX</div>
-            <h1 class="workspace-greeting">Messages with Admin</h1>
-            <p class="workspace-subtext">Direct communication channel with your team administrator.</p>
+            <div class="workspace-tag">COLLABORATION INBOX</div>
+            <h1 class="workspace-greeting">Messages & Team Channels</h1>
+            <p class="workspace-subtext">Chat with your assigned teams or message the administrator directly.</p>
           </div>
         </div>
 
-        <div class="chat-container" style="max-width: 860px; margin: 0 auto; height: 580px;">
-          <div class="chat-header">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <div class="avatar-circle" style="background: #4f46e5; color: white;">A</div>
-              <div>
-                <div style="font-weight: 700; font-size: 0.95rem;">System Administrator</div>
-                <div style="font-size: 0.75rem; color: #10b981;">● Online</div>
+        <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; height: 600px;">
+          <!-- Left Column: Channel & DM Selector -->
+          <div class="data-table-wrapper" style="padding: 1rem; overflow-y: auto;" id="userConversationsColumn">
+            <div style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em;">👥 My Teams & Groups</div>
+            <div id="userTeamChannelsList" style="margin-bottom: 1.25rem;"></div>
+
+            <div style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em;">💬 Direct Messages</div>
+            <div id="userDirectChannelsList"></div>
+          </div>
+
+          <!-- Right Column: Chat Box -->
+          <div class="chat-container" style="height: 100%;">
+            <div class="chat-header">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div id="userChatRecipientAvatar" class="avatar-circle" style="background: #4f46e5; color: white;">👥</div>
+                <div>
+                  <div id="userChatRecipientName" style="font-weight: 700; font-size: 0.95rem;">Select a channel</div>
+                  <div id="userChatRecipientSubtext" style="font-size: 0.75rem; color: #10b981;">● Online</div>
+                </div>
               </div>
+              <span id="userChatChannelBadge" class="badge-tag badge-primary">Team Channel</span>
             </div>
-            <span class="badge-tag badge-primary">Direct Thread</span>
-          </div>
 
-          <div id="userMessagesThread" class="chat-messages-box">
-            <!-- Messages rendered dynamically -->
-          </div>
+            <div id="userMessagesThread" class="chat-messages-box">
+              <!-- Messages rendered dynamically -->
+            </div>
 
-          <form class="chat-input-row" onsubmit="handleUserSendMessage(event)">
-            <input type="text" id="userMessageInput" class="chat-input" placeholder="Type your message or project update to Admin..." required autocomplete="off">
-            <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
-          </form>
+            <form class="chat-input-row" onsubmit="handleUserSendMessage(event)">
+              <input type="text" id="userMessageInput" class="chat-input" placeholder="Type a message to your team..." required autocomplete="off">
+              <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -1208,12 +1213,19 @@
           </div>
           <div style="display: grid; grid-template-columns: 1fr 2.5fr; gap: 1.5rem; height: 600px;">
             <div class="data-table-wrapper" style="padding: 1rem; overflow-y: auto;" id="adminConversationsColumn">
-              <div style="font-weight: 700; margin-bottom: 0.75rem;">Users Inbox</div>
+              <div style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em;">👥 Teams & Groups</div>
+              <div id="adminTeamChannelsList" style="margin-bottom: 1.25rem;"></div>
+
+              <div style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; letter-spacing: 0.05em;">👤 Direct Messages</div>
               <div id="adminConversationsList"></div>
             </div>
             <div class="chat-container" style="height: 100%;">
               <div class="chat-header">
-                <div id="adminChatRecipientName" style="font-weight: 700;">Select a user to chat</div>
+                <div>
+                  <div id="adminChatRecipientName" style="font-weight: 700;">Select a team or user</div>
+                  <div id="adminChatRecipientSubtext" style="font-size: 0.75rem; color: var(--text-muted);">Choose a channel on the left to start messaging</div>
+                </div>
+                <span id="adminChatBadge" class="badge-tag badge-primary">Channel</span>
               </div>
               <div id="adminThreadMessagesBox" class="chat-messages-box"></div>
               <form class="chat-input-row" onsubmit="handleAdminSendMessage(event)">

@@ -2,6 +2,7 @@ import math
 import secrets
 from datetime import datetime, timezone
 import requests
+from django.db import models
 from django.utils import timezone as dj_timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -46,120 +47,9 @@ def get_auth_user(request):
     return None
 
 def seed_defaults():
-    if UserAccount.objects.count() == 0:
-        # Default Admin
-        h1, s1 = hash_password('admin123')
-        admin = UserAccount.objects.create(
-            user_id='user_admin_001',
-            name='System Admin',
-            age=28,
-            gender='Unspecified',
-            email='admin@taskaro.com',
-            password_hash=h1,
-            password_salt=s1,
-            role='admin',
-            account_status='active',
-            avatar_color='#4f46e5'
-        )
-
-        # Default User
-        h2, s2 = hash_password('user123')
-        chiku = UserAccount.objects.create(
-            user_id='user_chiku_002',
-            name='chiku',
-            age=21,
-            gender='Male',
-            email='chiku@taskaro.com',
-            password_hash=h2,
-            password_salt=s2,
-            role='user',
-            account_status='active',
-            avatar_color='#2563eb'
-        )
-
-        # Default Team
-        team = Team.objects.create(
-            team_id='team_001',
-            name='Core Engineering Team',
-            description='Core product development and full-stack tasks',
-            created_by=admin.user_id
-        )
-        TeamMember.objects.create(team_id=team.team_id, user_id=admin.user_id)
-        TeamMember.objects.create(team_id=team.team_id, user_id=chiku.user_id)
-
-        # Default Project
-        Project.objects.create(
-            project_id='proj_001',
-            title='Taskaro Web Platform Launch',
-            description='Complete modern task management with user & admin portals',
-            team_id=team.team_id,
-            lead_id=admin.user_id,
-            status='Active',
-            deadline='2026-12-31',
-            progress=65
-        )
-
-        # Default Tasks
-        Task.objects.create(
-            task_id='task_001',
-            title='Setup Django & DRF Backend Architecture',
-            description='Initialize Django REST Framework endpoints and PostgreSQL database',
-            assignee_id=chiku.user_id,
-            creator_id=admin.user_id,
-            team_id=team.team_id,
-            project_id='proj_001',
-            priority='High',
-            status='Completed',
-            progress=100,
-            duration_hours=3.5,
-            category='Engineering'
-        )
-        Task.objects.create(
-            task_id='task_002',
-            title='Implement Dual Portal Login Separation',
-            description='Verify Admin vs User portal authentication boundaries',
-            assignee_id=chiku.user_id,
-            creator_id=admin.user_id,
-            team_id=team.team_id,
-            project_id='proj_001',
-            priority='High',
-            status='In Progress',
-            progress=70,
-            duration_hours=2.0,
-            category='Security'
-        )
-        Task.objects.create(
-            task_id='task_003',
-            title='Deploy to Railway with PostgreSQL',
-            description='Connect production PostgreSQL database and verify live endpoints',
-            assignee_id=chiku.user_id,
-            creator_id=admin.user_id,
-            team_id=team.team_id,
-            project_id='proj_001',
-            priority='Medium',
-            status='Pending',
-            progress=0,
-            duration_hours=1.5,
-            category='DevOps'
-        )
-
-        # Default Plan
-        p = Plan.objects.create(
-            plan_id='plan_001',
-            user_id=chiku.user_id,
-            goal_name='Full-Stack Mastery & Semester Prep',
-            category='Academic',
-            target_date='2026-12-31',
-            duration_label='3 Months',
-            completed_hours=42.0,
-            target_hours=120.0
-        )
-        PlanMilestone.objects.create(milestone_id='m_001', plan_id=p.plan_id, title='Backend API Complete', due_week=2, completed=True)
-        PlanMilestone.objects.create(milestone_id='m_002', plan_id=p.plan_id, title='PostgreSQL Cloud Integration', due_week=4, completed=False)
-
-        # Default Routine
-        Routine.objects.create(routine_id='rt_001', user_id=chiku.user_id, title='Daily Code Review & Standup', routine_type='morning', scheduled_time='09:00 AM', streak=7)
-        Routine.objects.create(routine_id='rt_002', user_id=chiku.user_id, title='Evening Progress Log & Sync', routine_type='evening', scheduled_time='06:30 PM', streak=5)
+    # Clean slate requested by user: No dummy admin, dummy users, or sample tasks seeded.
+    # Users and admins register cleanly through the Sign Up portal.
+    pass
 
 # ----------------------------------------------------
 # AUTHENTICATION VIEWS
@@ -509,6 +399,18 @@ class TaskListView(APIView):
         )
 
         log_activity(user.user_id, user.name, 'CREATE_TASK', 'Task', task.task_id, f"Created task: {task.title}")
+
+        if task.team_id:
+            team_members = TeamMember.objects.filter(team_id=task.team_id).exclude(user_id=user.user_id).values_list('user_id', flat=True)
+            for m_uid in team_members:
+                Notification.objects.create(
+                    notification_id='notif_' + secrets.token_hex(6),
+                    user_id=m_uid,
+                    title="New Team Task Assigned",
+                    message=f"Task '{task.title}' was assigned to your group",
+                    type='task_assigned'
+                )
+
         return Response({'message': 'Task created successfully', 'task_id': task.task_id}, status=status.HTTP_201_CREATED)
 
 class TaskDetailView(APIView):
@@ -576,7 +478,11 @@ class TeamListView(APIView):
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        teams = Team.objects.all().order_by('-created_at')
+        if user.role == 'admin':
+            teams = Team.objects.all().order_by('-created_at')
+        else:
+            user_team_ids = TeamMember.objects.filter(user_id=user.user_id).values_list('team_id', flat=True)
+            teams = Team.objects.filter(team_id__in=user_team_ids).order_by('-created_at')
         results = []
         for t in teams:
             member_ids = TeamMember.objects.filter(team_id=t.team_id).values_list('user_id', flat=True)
@@ -668,7 +574,13 @@ class ProjectListView(APIView):
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        projects = Project.objects.all().order_by('-created_at')
+        if user.role == 'admin':
+            projects = Project.objects.all().order_by('-created_at')
+        else:
+            user_team_ids = TeamMember.objects.filter(user_id=user.user_id).values_list('team_id', flat=True)
+            projects = Project.objects.filter(
+                models.Q(team_id__in=user_team_ids) | models.Q(lead_id=user.user_id)
+            ).order_by('-created_at')
         results = []
         for p in projects:
             tasks = Task.objects.filter(project_id=p.project_id)
@@ -979,48 +891,135 @@ class ScheduleDetailView(APIView):
 class MessageListView(APIView):
     def get(self, request):
         user = get_auth_user(request)
-        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
+        team_id = request.query_params.get('team_id')
         chat_with = request.query_params.get('user_id')
-        if user.role == 'admin':
-            if chat_with:
-                msgs = Message.objects.filter(
-                    (models.Q(sender_id=user.user_id, receiver_id=chat_with) |
-                     models.Q(sender_id=chat_with, receiver_id=user.user_id))
-                ).order_by('created_at')
-            else:
-                msgs = Message.objects.all().order_by('created_at')
-        else:
-            admin = UserAccount.objects.filter(role='admin').first()
-            admin_id = admin.user_id if admin else 'user_admin_001'
+
+        # 1. Team/Group Messages
+        if team_id:
+            if user.role != 'admin':
+                is_member = TeamMember.objects.filter(team_id=team_id, user_id=user.user_id).exists()
+                if not is_member:
+                    return Response({'error': 'Access denied: You are not a member of this team/group.'}, status=status.HTTP_403_FORBIDDEN)
+            msgs = Message.objects.filter(team_id=team_id).order_by('created_at')
+
+        # 2. Direct 1-on-1 Messages
+        elif chat_with:
             msgs = Message.objects.filter(
-                (models.Q(sender_id=user.user_id) | models.Q(receiver_id=user.user_id))
+                team_id__isnull=True
+            ).filter(
+                (models.Q(sender_id=user.user_id, receiver_id=chat_with) |
+                 models.Q(sender_id=chat_with, receiver_id=user.user_id))
             ).order_by('created_at')
 
-        return Response({'messages': MessageSerializer(msgs, many=True).data})
+        # 3. Default: User sees DM messages and messages from their teams
+        else:
+            if user.role == 'admin':
+                msgs = Message.objects.all().order_by('created_at')
+            else:
+                user_teams = TeamMember.objects.filter(user_id=user.user_id).values_list('team_id', flat=True)
+                msgs = Message.objects.filter(
+                    models.Q(team_id__in=user_teams) |
+                    (models.Q(team_id__isnull=True) & (models.Q(sender_id=user.user_id) | models.Q(receiver_id=user.user_id)))
+                ).order_by('created_at')
+
+        # Enrich messages with sender name and team name
+        msg_list = list(msgs)
+        sender_ids = {m.sender_id for m in msg_list}
+        team_ids_set = {m.team_id for m in msg_list if m.team_id}
+        senders_map = {u.user_id: u.name for u in UserAccount.objects.filter(user_id__in=sender_ids)}
+        teams_map = {t.team_id: t.name for t in Team.objects.filter(team_id__in=team_ids_set)}
+
+        data = []
+        for m in msg_list:
+            m_data = MessageSerializer(m).data
+            m_data['sender_name'] = senders_map.get(m.sender_id, 'User')
+            m_data['team_name'] = teams_map.get(m.team_id, '')
+            data.append(m_data)
+
+        return Response({'messages': data})
 
     def post(self, request):
         user = get_auth_user(request)
-        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        if not user:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
         content = request.data.get('content', '').strip()
-        if not content: return Response({'error': 'Message content cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+        if not content:
+            return Response({'error': 'Message content cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
 
+        team_id = request.data.get('team_id')
         receiver_id = request.data.get('receiver_id')
+
+        # Case A: Post to a Team/Group
+        if team_id:
+            team = Team.objects.filter(team_id=team_id).first()
+            if not team:
+                return Response({'error': 'Team/group not found'}, status=status.HTTP_404_NOT_FOUND)
+            if user.role != 'admin':
+                is_member = TeamMember.objects.filter(team_id=team_id, user_id=user.user_id).exists()
+                if not is_member:
+                    return Response({'error': 'Permission denied: You are not a member of this team/group.'}, status=status.HTTP_403_FORBIDDEN)
+
+            m = Message.objects.create(
+                message_id='msg_' + secrets.token_hex(6),
+                sender_id=user.user_id,
+                team_id=team_id,
+                receiver_id=None,
+                content=content,
+                read_status=False
+            )
+
+            # Notify team members
+            member_user_ids = TeamMember.objects.filter(team_id=team_id).exclude(user_id=user.user_id).values_list('user_id', flat=True)
+            for m_uid in member_user_ids:
+                Notification.objects.create(
+                    notification_id='notif_' + secrets.token_hex(6),
+                    user_id=m_uid,
+                    title=f"New message in {team.name}",
+                    message=f"{user.name}: {content[:60]}",
+                    type='team_message'
+                )
+
+            return Response({
+                'message': 'Team message sent successfully',
+                'message_id': m.message_id,
+                'team_id': team_id
+            })
+
+        # Case B: Post 1-on-1 Direct Message
         if not receiver_id:
             if user.role == 'admin':
-                return Response({'error': 'Receiver is required for admin messages'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Please select a recipient user or team'}, status=status.HTTP_400_BAD_REQUEST)
             admin = UserAccount.objects.filter(role='admin').first()
-            receiver_id = admin.user_id if admin else 'user_admin_001'
+            if not admin:
+                return Response({'error': 'No administrator account available to receive messages'}, status=status.HTTP_400_BAD_REQUEST)
+            receiver_id = admin.user_id
 
         m = Message.objects.create(
             message_id='msg_' + secrets.token_hex(6),
             sender_id=user.user_id,
             receiver_id=receiver_id,
+            team_id=None,
             content=content,
             read_status=False
         )
-        return Response({'message': 'Message sent successfully', 'message_id': m.message_id})
+
+        Notification.objects.create(
+            notification_id='notif_' + secrets.token_hex(6),
+            user_id=receiver_id,
+            title=f"New message from {user.name}",
+            message=content[:60],
+            type='direct_message'
+        )
+
+        return Response({
+            'message': 'Message sent successfully',
+            'message_id': m.message_id,
+            'receiver_id': receiver_id
+        })
 
 class NotificationListView(APIView):
     def get(self, request):
