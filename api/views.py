@@ -444,15 +444,25 @@ class TaskListView(APIView):
                 models.Q(team_id__in=team_ids)
             ).distinct().order_by('-created_at')
 
+        task_list = list(qs)
+        user_ids = {t.assignee_id for t in task_list if t.assignee_id} | {t.creator_id for t in task_list if t.creator_id}
+        prereq_ids = {t.prerequisite_task_id for t in task_list if t.prerequisite_task_id}
+        team_ids_set = {t.team_id for t in task_list if t.team_id}
+        project_ids = {t.project_id for t in task_list if t.project_id}
+
+        users_map = {u.user_id: u for u in UserAccount.objects.filter(user_id__in=user_ids)}
+        prereqs_map = {p.task_id: p for p in Task.objects.filter(task_id__in=prereq_ids)}
+        teams_map = {tm.team_id: tm for tm in Team.objects.filter(team_id__in=team_ids_set)}
+        projects_map = {pj.project_id: pj for pj in Project.objects.filter(project_id__in=project_ids)}
+
         results = []
-        for t in qs:
+        for t in task_list:
             data = TaskSerializer(t).data
-            # Enrich relations
-            assignee = UserAccount.objects.filter(user_id=t.assignee_id).first()
-            creator = UserAccount.objects.filter(user_id=t.creator_id).first()
-            prereq = Task.objects.filter(task_id=t.prerequisite_task_id).first() if t.prerequisite_task_id else None
-            team = Team.objects.filter(team_id=t.team_id).first() if t.team_id else None
-            project = Project.objects.filter(project_id=t.project_id).first() if t.project_id else None
+            assignee = users_map.get(t.assignee_id)
+            creator = users_map.get(t.creator_id)
+            prereq = prereqs_map.get(t.prerequisite_task_id)
+            team = teams_map.get(t.team_id)
+            project = projects_map.get(t.project_id)
 
             data['assignee_name'] = assignee.name if assignee else 'Unassigned'
             data['assignee_email'] = assignee.email if assignee else ''

@@ -155,3 +155,14 @@ class ActivityLog(models.Model):
     entity_id = models.CharField(max_length=100)
     details = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+class AuthToken(models.Model):
+    token = models.CharField(max_length=128, primary_key=True)
+    user_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class EmailOtp(models.Model):
+    email = models.CharField(max_length=255, primary_key=True)
+    otp = models.CharField(max_length=10)
+    expires_at = models.DateTimeField()
+

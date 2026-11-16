@@ -5,12 +5,13 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import UserAccount
+from django.utils import timezone
+from .models import UserAccount, AuthToken, EmailOtp
 
-# In-memory token cache (backed by token verification)
+# Fast in-memory token cache backed by database persistence
 TOKEN_CACHE = {}
 
-# In-memory OTP storage: email -> { 'otp': '123456', 'expires': datetime }
+# Fast in-memory OTP cache backed by database persistence
 OTP_STORE = {}
 
 def hash_password(password, salt=None):
@@ -34,17 +35,37 @@ def generate_auth_token(user):
         'email': user.email,
         'role': user.role,
         'name': user.name,
-        'created_at': datetime.utcnow()
+        'created_at': timezone.now()
     }
+    try:
+        AuthToken.objects.update_or_create(
+            token=token,
+            defaults={'user_id': user.user_id}
+        )
+    except Exception as e:
+        print(f"[AuthToken Warning] Could not persist token to DB: {e}")
     return token
 
 def get_user_from_token(token):
     if not token:
         return None
     session = TOKEN_CACHE.get(token)
-    if session:
+    user_id = session.get('user_id') if session else None
+    if not user_id:
         try:
-            return UserAccount.objects.get(user_id=session['user_id'])
+            auth_record = AuthToken.objects.filter(token=token).first()
+            if auth_record:
+                user_id = auth_record.user_id
+                TOKEN_CACHE[token] = {
+                    'user_id': user_id,
+                    'created_at': auth_record.created_at
+                }
+        except Exception:
+            user_id = None
+
+    if user_id:
+        try:
+            return UserAccount.objects.get(user_id=user_id)
         except UserAccount.DoesNotExist:
             return None
     return None
@@ -72,10 +93,18 @@ class BearerTokenAuthentication(BaseAuthentication):
 # Email OTP (SMTP) Utility
 def send_email_otp(email):
     otp = str(secrets.randbelow(900000) + 100000)  # 6-digit numeric OTP
+    expires = timezone.now() + timedelta(minutes=10)
     OTP_STORE[email.lower()] = {
         'otp': otp,
-        'expires': datetime.utcnow() + timedelta(minutes=10)
+        'expires': expires
     }
+    try:
+        EmailOtp.objects.update_or_create(
+            email=email.lower(),
+            defaults={'otp': otp, 'expires_at': expires}
+        )
+    except Exception as e:
+        print(f"[EmailOtp Warning] Could not persist OTP to DB: {e}")
 
     subject = 'Taskaro - Verification Code'
     message = f"Hello,\n\nYour Taskaro verification code is: {otp}\n\nThis code will expire in 10 minutes.\n\nBest regards,\nTaskaro Team"
@@ -91,13 +120,37 @@ def send_email_otp(email):
         return False, str(e)
 
 def verify_email_otp(email, otp):
-    record = OTP_STORE.get(email.lower())
-    if not record:
+    email_clean = email.lower().strip()
+    record = OTP_STORE.get(email_clean)
+    stored_otp = record.get('otp') if record else None
+    expires_at = record.get('expires') if record else None
+
+    if not stored_otp:
+        try:
+            db_record = EmailOtp.objects.filter(email=email_clean).first()
+            if db_record:
+                stored_otp = db_record.otp
+                expires_at = db_record.expires_at
+        except Exception:
+            pass
+
+    if not stored_otp:
         return False, "No OTP request found for this email"
-    if datetime.utcnow() > record['expires']:
-        del OTP_STORE[email.lower()]
+
+    if timezone.now() > expires_at:
+        OTP_STORE.pop(email_clean, None)
+        try:
+            EmailOtp.objects.filter(email=email_clean).delete()
+        except Exception:
+            pass
         return False, "OTP has expired. Please request a new one"
-    if record['otp'] != str(otp).strip():
+
+    if stored_otp != str(otp).strip():
         return False, "Invalid OTP verification code"
-    del OTP_STORE[email.lower()]
+
+    OTP_STORE.pop(email_clean, None)
+    try:
+        EmailOtp.objects.filter(email=email_clean).delete()
+    except Exception:
+        pass
     return True, "OTP verified successfully"
