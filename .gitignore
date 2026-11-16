@@ -4,6 +4,15 @@ node_modules/
 Thumbs.db
 data/*.db-wal
 data/*.db-shm
+data/*.db
 *.zip
 shots/
 .env
+
+# Python / Django
+venv/
+*.pyc
+__pycache__/
+staticfiles/
+*.sqlite3
+scratch/
