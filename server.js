@@ -1118,7 +1118,7 @@ app.get('/api/dashboard/stats', authMiddleware, (req, res) => {
 });
 
 // ----------------------------------------------------
-// AI ASSISTANT API (RULE + CONTEXT BASED AI)
+// AI ASSISTANT API (BILINGUAL: ENGLISH & HINGLISH)
 // ----------------------------------------------------
 
 app.post('/api/ai/ask', authMiddleware, (req, res) => {
@@ -1127,36 +1127,51 @@ app.post('/api/ai/ask', authMiddleware, (req, res) => {
     return res.status(400).json({ error: 'Question is required' });
   }
 
-  const query = question.toLowerCase();
+  const query = question.toLowerCase().trim();
   const now = new Date();
 
-  // Role check: User AI vs Admin AI
+  // Detect Hinglish / Hindi keywords
+  const hinglishTokens = ['kya', 'kaise', 'kitne', 'kitna', 'hai', 'karo', 'kare', 'kaun', 'kaunsa', 'batao', 'bache', 'baki', 'aaj', 'kal', 'kyu', 'kyun', 'hoga', 'mujhe', 'mera', 'meri', 'padhai', 'taiyari', 'samjhao', 'kisko', 'jyada', 'chal', 'raha'];
+  const isHinglish = hinglishTokens.some(token => query.includes(token));
+
+  // Role check: Admin AI vs User AI
   if (req.user.role === 'admin') {
-    // Admin AI questions
     const allUsers = db.prepare("SELECT user_id, name, email FROM users WHERE role = 'user'").all();
     const allTasks = db.prepare(`
       SELECT t.*, u.name as assignee_name FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.user_id
     `).all();
 
-    if (query.includes('how many users') || query.includes('user count') || query.includes('registered')) {
+    // 1. User Count
+    if (query.includes('how many user') || query.includes('user count') || query.includes('registered') || query.includes('kitne user') || query.includes('kitne log')) {
+      if (isHinglish) {
+        return res.json({
+          answer: `Platform par abhi kul **${allUsers.length} registered users** active hain.`
+        });
+      }
       return res.json({
-        answer: `There are currently **${allUsers.length} registered users** in the Taskaro platform.`
+        answer: `There are currently **${allUsers.length} registered users** active on the Taskaro platform.`
       });
     }
 
-    if (query.includes('overdue') || query.includes('delayed')) {
+    // 2. Overdue Tasks
+    if (query.includes('overdue') || query.includes('delayed') || query.includes('late') || query.includes('deadline') || query.includes('late task')) {
       const overdueTasks = allTasks.filter(t => t.status !== 'Completed' && t.deadline && new Date(t.deadline) < now);
       if (overdueTasks.length === 0) {
-        return res.json({ answer: 'Great news! There are currently no overdue tasks across the system.' });
+        return res.json({
+          answer: isHinglish ? 'Bahut badhiya! Abhi system me koi bhi overdue ya late task nahi hai.' : 'Great news! There are currently no overdue tasks across the system.'
+        });
       }
       const list = overdueTasks.map(t => `- **${t.title}** (Assignee: ${t.assignee_name || 'Unassigned'}, Due: ${t.deadline.split('T')[0]})`).join('\n');
       return res.json({
-        answer: `Found **${overdueTasks.length} overdue task(s)** requiring admin attention:\n\n${list}`
+        answer: isHinglish
+          ? `System me **${overdueTasks.length} overdue task(s)** mile hain jinpar attention chahiye:\n\n${list}`
+          : `Found **${overdueTasks.length} overdue task(s)** requiring admin attention:\n\n${list}`
       });
     }
 
-    if (query.includes('workload') || query.includes('highest workload') || query.includes('suggest assignment')) {
+    // 3. Workload & Assignment Recommendations
+    if (query.includes('workload') || query.includes('highest workload') || query.includes('suggest assignment') || query.includes('kiske paas') || query.includes('jyada kaam') || query.includes('kisko assign') || query.includes('free kaun')) {
       const counts = {};
       allUsers.forEach(u => { counts[u.name] = 0; });
       allTasks.forEach(t => {
@@ -1165,14 +1180,16 @@ app.post('/api/ai/ask', authMiddleware, (req, res) => {
         }
       });
 
-      let highestUser = '';
-      let maxCount = -1;
-      let lowestUser = '';
-      let minCount = 9999;
-
+      let highestUser = '', maxCount = -1, lowestUser = '', minCount = 9999;
       for (const [name, count] of Object.entries(counts)) {
         if (count > maxCount) { maxCount = count; highestUser = name; }
         if (count < minCount) { minCount = count; lowestUser = name; }
+      }
+
+      if (isHinglish) {
+        return res.json({
+          answer: `**Workload Analysis:**\n- **Sabse Jyada Load:** ${highestUser || 'N/A'} ke paas abhi ${maxCount >= 0 ? maxCount : 0} active tasks hain.\n- **Naye Task ke liye Recommended:** ${lowestUser || 'Koi bhi available user'} ke paas sabse kam (${minCount === 9999 ? 0 : minCount}) tasks hain.\n\n💡 *Smart Suggestion:* Team balance maintain karne ke liye naye tasks ${lowestUser} ko assign karein.`
+        });
       }
 
       return res.json({
@@ -1183,8 +1200,13 @@ app.post('/api/ai/ask', authMiddleware, (req, res) => {
     // Default Admin AI response
     const completedCount = allTasks.filter(t => t.status === 'Completed').length;
     const rate = allTasks.length > 0 ? Math.round((completedCount / allTasks.length) * 100) : 0;
+    if (isHinglish) {
+      return res.json({
+        answer: `**Taskaro System Overview:**\n- Total Tasks: ${allTasks.length}\n- Completed: ${completedCount} (${rate}% overall completion rate)\n- Active Users: ${allUsers.length}\n\nAap mujhse overdue tasks, team workload, user status, ya smart assignment suggestions ke baare me pooch sakte hain!`
+      });
+    }
     return res.json({
-      answer: `**Taskaro System Summary:**\n- Total Tasks: ${allTasks.length}\n- Completed: ${completedCount} (${rate}% overall completion rate)\n- Active Users: ${allUsers.length}\n\nYou can ask me about overdue tasks, workload analysis, user progress, or assignment recommendations.`
+      answer: `**Taskaro System Summary:**\n- Total Tasks: ${allTasks.length}\n- Completed: ${completedCount} (${rate}% overall completion rate)\n- Active Users: ${allUsers.length}\n\nYou can ask me about overdue tasks, workload analysis, user progress, or assignment recommendations!`
     });
 
   } else {
@@ -1197,67 +1219,111 @@ app.post('/api/ai/ask', authMiddleware, (req, res) => {
     const userPlans = db.prepare('SELECT * FROM plans WHERE user_id = ?').all(req.user.userId);
     const userNotes = db.prepare('SELECT * FROM notes WHERE user_id = ?').all(req.user.userId);
 
-    if (query.includes('what should i complete today') || query.includes('today') || query.includes('recommend')) {
+    // 1. What should I do today / Focus
+    if (query.includes('today') || query.includes('recommend') || query.includes('what should') || query.includes('aaj kya') || query.includes('aaj ka') || query.includes('kya karu') || query.includes('kaunsa task') || query.includes('pehle kya')) {
       const pendingTasks = userTasks.filter(t => t.status === 'In Progress' || t.status === 'Pending');
       if (pendingTasks.length === 0) {
         return res.json({
-          answer: `You don't have any pending tasks right now! Great job. Consider planning ahead or working on your exam roadmap.`
+          answer: isHinglish
+            ? 'Shaandar! Aaj ke liye aapke paas koi pending task nahi hai. Aap apne exam roadmaps ya revision par focus kar sakte hain.'
+            : `You don't have any pending tasks right now! Great job. Consider planning ahead or working on your exam roadmap.`
         });
       }
       const topTasks = pendingTasks.slice(0, 3).map(t => `- **${t.title}** (Priority: ${t.priority}, Progress: ${t.progress}%)`).join('\n');
+      if (isHinglish) {
+        return res.json({
+          answer: `Aaj ke liye aapka **High-Impact Action Plan** yeh hai:\n\n${topTasks}\n\n💡 *Focus Tip: Subah sabse pehle High Priority task se shuru karein bina kisi distraction ke.*`
+        });
+      }
       return res.json({
         answer: `Here is your high-impact action plan for today:\n\n${topTasks}\n\n💡 *Tip: Start with your highest priority task first thing in the morning.*`
       });
     }
 
-    if (query.includes('how many tasks are pending') || query.includes('pending tasks') || query.includes('count')) {
+    // 2. Pending Tasks Count
+    if (query.includes('pending') || query.includes('how many') || query.includes('count') || query.includes('kitne task') || query.includes('kitna bacha') || query.includes('kitne baki') || query.includes('kitna kaam')) {
       const pending = userTasks.filter(t => t.status === 'Pending' || t.status === 'In Progress').length;
       const completed = userTasks.filter(t => t.status === 'Completed').length;
+      if (isHinglish) {
+        return res.json({
+          answer: `Aapke kul **${userTasks.length} tasks** me se abhi **${pending} pending/in-progress** hain aur **${completed} completed** ho chuke hain.`
+        });
+      }
       return res.json({
         answer: `You currently have **${pending} active/pending task(s)** and **${completed} completed task(s)** out of ${userTasks.length} total tasks.`
       });
     }
 
-    if (query.includes('why is my task blocked') || query.includes('blocked')) {
+    // 3. Blocked / Locked Tasks
+    if (query.includes('blocked') || query.includes('locked') || query.includes('lock kyu') || query.includes('block kyu') || query.includes('open kyu') || query.includes('unlock')) {
       const blockedTasks = userTasks.filter(t => t.status === 'Blocked' || t.task_type === 'Dependent');
       if (blockedTasks.length === 0) {
-        return res.json({ answer: 'None of your tasks are currently blocked!' });
+        return res.json({
+          answer: isHinglish ? 'Aapka koi bhi task abhi locked ya blocked nahi hai! Sab ready hain.' : 'None of your tasks are currently blocked!'
+        });
       }
       const explanations = blockedTasks.map(t => {
         const prereq = db.prepare('SELECT title, status FROM tasks WHERE task_id = ?').get(t.prerequisite_task_id);
+        if (isHinglish) {
+          return `- **${t.title}**: Yeh task locked hai kyunki iska prerequisite **"${prereq ? prereq.title : 'Prerequisite task'}"** (Status: ${prereq ? prereq.status : 'Incomplete'}) abhi complete nahi hua. Jaise hi woh complete mark hoga, yeh automatically unlock ho jayega!`;
+        }
         return `- **${t.title}**: Blocked waiting for prerequisite **"${prereq ? prereq.title : 'Prerequisite task'}"** (Current status: ${prereq ? prereq.status : 'Incomplete'}). Once that is marked completed, this task will automatically unlock!`;
       }).join('\n');
       return res.json({
-        answer: `Here is why your dependent task is locked:\n\n${explanations}`
+        answer: isHinglish
+          ? `Aapke dependent task ke locked hone ka kaaran:\n\n${explanations}`
+          : `Here is why your dependent task is locked:\n\n${explanations}`
       });
     }
 
-    if (query.includes('daily routine') || query.includes('create a daily routine') || query.includes('schedule')) {
-      return res.json({
-        answer: `Here is an optimized study & productivity routine tailored for your schedule:\n\n1. **06:00 AM** — Wake Up, Hydrate & Light Exercise\n2. **07:30 AM** — Deep Work Session 1 (Core Academic Concepts)\n3. **09:30 AM** — Breakfast & Break\n4. **11:00 AM** — Lab Practicals & Coding Practice\n5. **02:00 PM** — Quick Review & Lunch\n6. **05:00 PM** — Problem Solving & Assignment Work\n7. **09:30 PM** — Daily Wrap-up, Streak Check & Next Day Prep\n\nWould you like me to automatically add these time blocks to your Time Table?`
-      });
-    }
-
-    if (query.includes('summarize my python notes') || query.includes('python notes') || query.includes('notes')) {
-      const pythonNote = userNotes.find(n => n.title.toLowerCase().includes('python') || n.category.toLowerCase().includes('python'));
-      if (pythonNote) {
+    // 4. Daily Routine / Timetable
+    if (query.includes('routine') || query.includes('timetable') || query.includes('schedule') || query.includes('din ka plan') || query.includes('routine banao')) {
+      if (isHinglish) {
         return res.json({
-          answer: `**Summary of "${pythonNote.title}":**\n\n${pythonNote.content}\n\n*Key Takeaway:* Object-Oriented Programming models real-world entities through classes and instances, maintaining clean code via encapsulation and polymorphism.`
+          answer: `Aapke schedule ke hisab se ek optimized **Daily Productivity Routine**:\n\n1. **06:00 AM** — Wake Up, Hydrate & Light Exercise\n2. **07:30 AM** — Deep Work Block 1 (Core Concepts & Math Problem Solving)\n3. **09:30 AM** — Breakfast & Healthy Break\n4. **11:00 AM** — Lab Practicals & Coding Sessions\n5. **02:00 PM** — Lunch & 20-min Power Nap\n6. **05:00 PM** — Pending Tasks & Assignment Completion\n7. **09:30 PM** — Day Review, Streak Check & Kal ka Planning\n\nKya aap chahte hain ki main ise aapke **Routine** tab me directly add kar doon?`
         });
       }
       return res.json({
-        answer: `You have ${userNotes.length} note(s) saved in your workspace. Use the Notes tab to search, pin, or link notes to your exam roadmap.`
+        answer: `Here is an optimized study & productivity routine tailored for your schedule:\n\n1. **06:00 AM** — Wake Up, Hydrate & Light Exercise\n2. **07:30 AM** — Deep Work Session 1 (Core Academic Concepts)\n3. **09:30 AM** — Breakfast & Break\n4. **11:00 AM** — Lab Practicals & Coding Practice\n5. **02:00 PM** — Quick Review & Lunch\n6. **05:00 PM** — Problem Solving & Assignment Work\n7. **09:30 PM** — Daily Wrap-up, Streak Check & Next Day Prep\n\nWould you like me to automatically add these time blocks to your Routine tab?`
       });
     }
 
-    if (query.includes('nimcet') || query.includes('exam') || query.includes('target')) {
+    // 5. Notes & Summarization
+    if (query.includes('note') || query.includes('python') || query.includes('notes') || query.includes('samjhao') || query.includes('formula')) {
+      const pythonNote = userNotes.find(n => n.title.toLowerCase().includes('python') || n.category.toLowerCase().includes('python'));
+      if (pythonNote) {
+        return res.json({
+          answer: isHinglish
+            ? `**"${pythonNote.title}" ka Summary:**\n\n${pythonNote.content}\n\n💡 *Key Takeaway:* Object-Oriented Programming real-world objects ko classes ke through model karta hai aur encapsulation & polymorphism se code ko clean banata hai.`
+            : `**Summary of "${pythonNote.title}":**\n\n${pythonNote.content}\n\n*Key Takeaway:* Object-Oriented Programming models real-world entities through classes and instances, maintaining clean code via encapsulation and polymorphism.`
+        });
+      }
+      return res.json({
+        answer: isHinglish
+          ? `Aapke paas workspace me **${userNotes.length} notes** saved hain. Aap Notes tab me jakar unhe revision ya roadmap se link kar sakte hain.`
+          : `You have ${userNotes.length} note(s) saved in your workspace. Use the Notes tab to search, pin, or link notes to your exam roadmap.`
+      });
+    }
+
+    // 6. Exam / Plans / Roadmaps
+    if (query.includes('exam') || query.includes('nimcet') || query.includes('target') || query.includes('plan') || query.includes('taiyari') || query.includes('padhai')) {
       const activePlan = userPlans[0];
+      if (isHinglish) {
+        return res.json({
+          answer: `Aapke exam target (**${activePlan ? activePlan.goal_name : 'External Practicals / NIMCET'}**) ke liye preparation plan:\n- Rozana 25 objective sawal solve karein.\n- Operating Systems aur Algorithms ke key concepts ka revision karein.\n- Har roz 90 minute ka uninterrupted deep focus session lagayein target complete karne ke liye.`
+        });
+      }
       return res.json({
         answer: `For your exam preparation (${activePlan ? activePlan.goal_name : 'NIMCET / Semester Goals'}):\n- Practice 25 objective problems daily.\n- Review mathematical formulas and time complexity in algorithms.\n- Allocate 90 minutes of uninterrupted focus daily to maintain your target roadmap.`
       });
     }
 
-    // Default friendly assistant response
+    // Default friendly user assistant response
+    if (isHinglish) {
+      return res.json({
+        answer: `Namaste ${req.user.name}! Main aapka personal Taskaro AI assistant hoon. Mere paas aapke ${userTasks.length} tasks, daily routines aur exam roadmaps ka poora context hai.\n\nAap mujhse Hinglish ya English kisi me bhi pooch sakte hain:\n- *"Aaj mujhe kya karna chahiye?"*\n- *"Kitne tasks pending hain?"*\n- *"Mera task lock kyu hai?"*\n- *"Daily routine banake do"*\n- *"Python ke notes samjhao"*\n- *"Exam ki taiyari kaise kare?"*`
+      });
+    }
     return res.json({
       answer: `Hello ${req.user.name}! I am your personal Taskaro AI assistant. I have full context of your ${userTasks.length} tasks, ${userRoutines.length} daily routines, and exam roadmaps.\n\nYou can ask me:\n- *"What should I complete today?"*\n- *"How many tasks are pending?"*\n- *"Why is my task blocked?"*\n- *"Create a daily routine for me"*\n- *"Summarize my Python notes"*`
     });

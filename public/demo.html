@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taskaro Studio - Bento Experience (Demo)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: rgba(18, 24, 38, 0.7);
+      --bg-card-hover: rgba(26, 34, 52, 0.9);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-md: 12px;
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --bg-card-hover: #ffffff;
+      --border: rgba(15, 23, 42, 0.08);
+      --border-accent: rgba(99, 102, 241, 0.3);
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --primary: #4f46e5;
+      --primary-glow: rgba(79, 70, 229, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 65%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+    }
+
+    /* Ambient top line */
+    .ambient-header {
+      position: fixed; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), var(--accent-cyan), transparent);
+      z-index: 100;
+    }
+
+    /* Top Navigation */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.8);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1.5rem;
+    }
+    [data-theme="light"] .nav { background: rgba(255, 255, 255, 0.85); }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 0.65rem; text-decoration: none; color: inherit; cursor: pointer;
+    }
+    .logo-img-box {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      padding: 5px;
+    }
+    [data-theme="light"] .logo-img-box { background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+    .brand-title {
+      font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em;
+    }
+
+    /* Search Bar in Navbar */
+    .nav-search-wrap {
+      flex: 1; max-width: 320px; position: relative;
+    }
+    .nav-search-input {
+      width: 100%; background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 0.45rem 1rem 0.45rem 2.2rem; font-size: 0.85rem;
+      color: var(--text); outline: none; transition: var(--transition);
+      font-family: inherit;
+    }
+    .nav-search-input:focus {
+      border-color: var(--primary); background: rgba(255,255,255,0.08);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .search-icon-svg {
+      position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-dim); pointer-events: none; width: 14px; height: 14px;
+    }
+
+    /* Navigation Pills */
+    .nav-center {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border);
+      border-radius: 999px; padding: 4px;
+    }
+    .nav-pill {
+      border: none; background: transparent; color: var(--text-muted);
+      font-size: 0.875rem; font-weight: 600; padding: 0.4rem 0.95rem; border-radius: 999px;
+      cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 0.4rem;
+    }
+    .nav-pill:hover { color: var(--text); }
+    .nav-pill.active {
+      background: var(--primary); color: #ffffff;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+    .nav-badge-count {
+      background: #ef4444; color: white; font-size: 0.65rem; font-weight: 800;
+      padding: 1px 6px; border-radius: 999px;
+    }
+
+    .nav-actions {
+      display: flex; align-items: center; gap: 0.85rem;
+    }
+    .theme-btn {
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px; width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      font-size: 1.1rem; transition: var(--transition);
+    }
+    .theme-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--text-dim); }
+
+    .user-chip {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 4px 12px 4px 6px; border-radius: 999px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      transition: var(--transition);
+    }
+    .user-chip:hover { border-color: var(--primary); }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 999px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1360px; margin: 0 auto; padding: 2rem;
+    }
+
+    /* Tabs Content Visibility */
+    .tab-view { display: none; }
+    .tab-view.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Welcome Header */
+    .hero-banner {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-bottom: 2rem;
+    }
+    .hero-title {
+      font-size: 2.25rem; font-weight: 800; letter-spacing: -0.03em;
+      margin-bottom: 0.25rem;
+      background: linear-gradient(180deg, #ffffff 40%, #94a3b8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    [data-theme="light"] .hero-title {
+      background: linear-gradient(180deg, #0f172a 40%, #475569 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle { color: var(--text-muted); font-size: 1rem; }
+    .hero-cta-btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;
+      border: none; padding: 0.65rem 1.4rem; border-radius: 12px;
+      font-weight: 700; font-size: 0.92rem; cursor: pointer;
+      box-shadow: 0 4px 16px var(--primary-glow);
+      transition: var(--transition);
+    }
+    .hero-cta-btn:hover {
+      transform: translateY(-2px); box-shadow: 0 8px 24px var(--primary-glow);
+    }
+
+    /* BENTO GRID */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .bento-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px -10px rgba(0,0,0,0.5);
+    }
+
+    .span-8 { grid-column: span 8; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+
+    .card-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+    .card-title {
+      font-size: 0.85rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
+    .stat-huge {
+      font-size: 3rem; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1; margin-bottom: 0.5rem;
+    }
+    .stat-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    }
+
+    .progress-track {
+      height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06);
+      overflow: hidden; margin: 1rem 0 0.5rem; position: relative;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #6366f1, #06b6d4);
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .goal-countdown-box {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(99, 102, 241, 0.06); border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem;
+    }
+    .countdown-days {
+      font-size: 2.25rem; font-weight: 800; color: var(--primary);
+      line-height: 1; font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Tasks list */
+    .section-title-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 2.5rem 0 1rem;
+    }
+    .section-title { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+
+    .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .task-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 1rem 1.25rem;
+      transition: var(--transition);
+    }
+    .task-item:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      background: var(--bg-card-hover);
+      transform: translateX(4px);
+    }
+    .task-left { display: flex; align-items: center; gap: 1rem; }
+    .custom-checkbox {
+      width: 22px; height: 22px; border-radius: 6px;
+      border: 2px solid var(--text-dim); background: transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: var(--transition);
+    }
+    .custom-checkbox.checked {
+      background: var(--accent-emerald); border-color: var(--accent-emerald);
+      color: white; font-size: 0.8rem; font-weight: 800;
+    }
+    .task-text { font-weight: 600; font-size: 0.95rem; }
+    .task-sub { font-size: 0.8rem; color: var(--text-muted); }
+
+    .task-pill {
+      font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    }
+    .pill-progress { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; }
+    .pill-pending { background: rgba(245, 158, 11, 0.15); color: #fcd34d; }
+    .pill-locked { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+    .pill-done { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; }
+
+    /* MESSAGES TAB STYLES */
+    .chat-layout {
+      display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; height: 600px;
+    }
+    .chat-sidebar {
+      border-right: 1px solid var(--border); background: rgba(255,255,255,0.01);
+      display: flex; flex-direction: column;
+    }
+    .chat-sidebar-header {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      font-weight: 700; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center;
+    }
+    .conv-item {
+      padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+      display: flex; gap: 0.75rem; cursor: pointer; transition: var(--transition);
+    }
+    .conv-item.active { background: rgba(99, 102, 241, 0.1); border-left: 3px solid var(--primary); }
+    .chat-main { display: flex; flex-direction: column; height: 100%; }
+    .chat-main-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .chat-bubbles {
+      flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;
+    }
+    .bubble {
+      max-width: 70%; padding: 0.85rem 1.15rem; border-radius: 14px; font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    .bubble-admin {
+      align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    }
+    .bubble-user {
+      align-self: flex-end; background: var(--primary); color: white;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    .chat-input-bar {
+      padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+      display: flex; gap: 0.75rem;
+    }
+    .chat-input {
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0.75rem 1rem; color: var(--text);
+      outline: none; font-family: inherit; font-size: 0.9rem;
+    }
+    .chat-input:focus { border-color: var(--primary); }
+    .chat-send-btn {
+      background: var(--primary); color: white; border: none; padding: 0 1.25rem;
+      border-radius: var(--radius-sm); font-weight: 700; cursor: pointer; transition: var(--transition);
+    }
+
+    /* PROFILE TAB STYLES */
+    .profile-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem; max-width: 800px; margin: 0 auto;
+    }
+    .profile-header-flex {
+      display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+      padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
+    }
+    .profile-avatar-large {
+      width: 72px; height: 72px; border-radius: 999px;
+      background: linear-gradient(135deg, #06b6d4, #3b82f6);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 2rem;
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+    }
+    .form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-label {
+      font-size: 0.85rem; font-weight: 700; color: var(--text-muted);
+    }
+    .form-input {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 0.75rem 1rem; color: var(--text);
+      font-size: 0.92rem; outline: none; transition: var(--transition);
+      font-family: inherit;
+    }
+    .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+    .save-profile-btn {
+      margin-top: 1.5rem; background: var(--primary); color: white; border: none;
+      padding: 0.75rem 1.75rem; border-radius: var(--radius-sm); font-weight: 700;
+      font-size: 0.95rem; cursor: pointer; transition: var(--transition);
+      box-shadow: 0 4px 16px var(--primary-glow);
+    }
+    .save-profile-btn:hover { transform: translateY(-2px); }
+
+    /* AI Prompts Button Styles */
+    .ai-prompt-btn {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border);
+      color: var(--text); padding: 0.65rem 0.95rem; border-radius: var(--radius-sm);
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition);
+      display: block; width: 100%; font-family: inherit;
+    }
+    .ai-prompt-btn:hover {
+      background: rgba(99, 102, 241, 0.18); border-color: var(--primary);
+      color: #ffffff; transform: translateX(3px);
+    }
+    [data-theme="light"] .ai-prompt-btn {
+      background: #ffffff; border-color: rgba(15, 23, 42, 0.12); color: #0f172a;
+    }
+    [data-theme="light"] .ai-prompt-btn:hover {
+      background: rgba(79, 70, 229, 0.08); border-color: var(--primary); color: var(--primary);
+    }
+
+    /* TOAST */
+    .toast-msg {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 100;
+      background: #10b981; color: white; font-weight: 700; font-size: 0.9rem;
+      padding: 0.75rem 1.5rem; border-radius: var(--radius-sm);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); display: none;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="ambient-header"></div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="nav">
+    <!-- Brand Logo (Restored original Taskaro logo!) -->
+    <div class="nav-brand" onclick="switchTab('dashboard')">
+      <div class="logo-img-box">
+        <img src="logo.png" alt="Taskaro Logo" style="width: 26px; height: 26px; object-fit: contain;">
+      </div>
+      <span class="brand-title">Taskaro</span>
+    </div>
+
+    <!-- Global Search Bar -->
+    <div class="nav-search-wrap">
+      <svg class="search-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" class="nav-search-input" id="searchFilterInput" placeholder="Search tasks, plans, notes... ↵" oninput="liveSearch(this.value)">
+    </div>
+
+    <!-- Navigation Pills with Exact Requested Names -->
+    <nav class="nav-center">
+      <button class="nav-pill active" id="tabBtn-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="nav-pill" id="tabBtn-tasks" onclick="switchTab('tasks')">My Tasks</button>
+      <button class="nav-pill" id="tabBtn-routine" onclick="switchTab('routine')">Routine</button>
+      <button class="nav-pill" id="tabBtn-plans" onclick="switchTab('plans')">Plans</button>
+      <button class="nav-pill" id="tabBtn-messages" onclick="switchTab('messages')">
+        Messages <span class="nav-badge-count">1</span>
+      </button>
+      <button class="nav-pill" id="tabBtn-profile" onclick="switchTab('profile')">Profile</button>
+      <button class="nav-pill" id="tabBtn-ai" onclick="switchTab('ai')">Ask AI ✨</button>
+    </nav>
+
+    <!-- Right Controls: Theme Toggle & User Info -->
+    <div class="nav-actions">
+      <button class="theme-btn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌓</button>
+      <div class="user-chip" onclick="switchTab('profile')">
+        <div class="avatar" id="navAvatarLetter">C</div>
+        <span id="navDisplayName">Chiku</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="container">
+
+    <!-- ==========================================
+         VIEW 1: DASHBOARD (Bento Grid)
+         ========================================== -->
+    <section id="view-dashboard" class="tab-view active">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title" id="welcomeHeading">Good afternoon, Chiku</h1>
+          <p class="hero-subtitle">You have 5 active sprint tasks. External Practicals countdown is running.</p>
+        </div>
+        <button class="hero-cta-btn" onclick="switchTab('tasks')">
+          <span>+ Create Task</span>
+        </button>
+      </div>
+
+      <!-- BENTO GRID -->
+      <div class="bento-grid">
+        <!-- Bento 1: Primary Sprint Progress (Span 8) -->
+        <div class="bento-card span-8">
+          <div class="card-header">
+            <span class="card-title">Current Sprint Velocity</span>
+            <span class="stat-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+              ↑ +18% this week
+            </span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 1rem;">
+            <div class="stat-huge">66%</div>
+            <div style="color: var(--text-muted); font-size: 1rem; font-weight: 600;">12 of 18 Milestones Completed</div>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width: 66%;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-top: 1rem; font-size: 0.82rem; color: var(--text-dim);">
+            <span>Active Sprint: Discrete Math & OS Scheduling</span>
+            <span>Target: 31 Dec 2026</span>
+          </div>
+        </div>
+
+        <!-- Bento 2: Countdown Box (Span 4) -->
+        <div class="bento-card span-4">
+          <div class="card-header">
+            <span class="card-title">Goal Countdown</span>
+            <span style="font-size: 1.25rem;">🎯</span>
+          </div>
+          <div style="font-weight: 800; font-size: 1.15rem; margin-bottom: 0.25rem;">External Practicals</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">Semester Academic Prep</div>
+          <div class="goal-countdown-box">
+            <div>
+              <div class="countdown-days">45</div>
+              <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Days Left</div>
+            </div>
+            <button onclick="switchTab('plans')" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+              Open Plan →
+            </button>
+          </div>
+        </div>
+
+        <!-- Bento 3: Quick Metric 1 (Span 3) -->
+        <div class="bento-card span-3">
+          <div class="card-header">
+            <span class="card-title">Total Tasks</span>
+            <span style="font-size: 1.1rem;">📋</span>
+          </div>
+          <div class="stat-huge" style="font-size: 2.25rem;">8</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Across all modules</div>
+        </div>
+
+        <!-- Bento 4: Quick Metric 2 (Span 3) -->
+        <div class="bento-card span-3">
+          <div class="card-header">
+            <span class="card-title">In Progress</span>
+            <span style="font-size: 1.1rem;">⚡</span>
+          </div>
+          <div class="stat-huge" style="font-size: 2.25rem; color: #818cf8;">5</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Active today</div>
+        </div>
+
+        <!-- Bento 5: Quick Metric 3 (Span 3) -->
+        <div class="bento-card span-3">
+          <div class="card-header">
+            <span class="card-title">Pending</span>
+            <span style="font-size: 1.1rem;">⏳</span>
+          </div>
+          <div class="stat-huge" style="font-size: 2.25rem; color: #fbbf24;">3</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Waiting to start</div>
+        </div>
+
+        <!-- Bento 6: Quick Metric 4 (Span 3) -->
+        <div class="bento-card span-3">
+          <div class="card-header">
+            <span class="card-title">Study Streak</span>
+            <span style="font-size: 1.1rem;">🔥</span>
+          </div>
+          <div class="stat-huge" style="font-size: 2.25rem; color: #f87171;">15 <span style="font-size: 1rem; color: var(--text-dim);">days</span></div>
+          <div style="font-size: 0.82rem; color: var(--text-muted);">Top 5% Productivity!</div>
+        </div>
+      </div>
+
+      <!-- Critical Path Task Section -->
+      <div class="section-title-row">
+        <div>
+          <h2 class="section-title">Critical Path & Today's Tasks</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Automated prerequisite unlocking system.</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <span class="task-pill pill-progress">Active: 5</span>
+          <span class="task-pill pill-locked">Locked: 1</span>
+        </div>
+      </div>
+
+      <div class="task-list" id="dashboardTasksList">
+        <div class="task-item search-target">
+          <div class="task-left">
+            <div class="custom-checkbox checked">✓</div>
+            <div>
+              <div class="task-text" style="text-decoration: line-through; color: var(--text-dim);">Database Schema & WAL Mode Setup</div>
+              <div class="task-sub">Prerequisite for API Integration • Completed</div>
+            </div>
+          </div>
+          <span class="task-pill pill-done">Completed</span>
+        </div>
+
+        <div class="task-item search-target" style="border-left: 3px solid var(--primary);">
+          <div class="task-left">
+            <div class="custom-checkbox" onclick="this.classList.toggle('checked')"></div>
+            <div>
+              <div class="task-text">Assignment 1 - Discrete Mathematics</div>
+              <div class="task-sub">Complete Set Theory & Proofs • High Priority</div>
+            </div>
+          </div>
+          <span class="task-pill pill-progress">In Progress</span>
+        </div>
+
+        <div class="task-item search-target" style="opacity: 0.75;">
+          <div class="task-left">
+            <div class="custom-checkbox" style="background: rgba(255,255,255,0.05); cursor: not-allowed;">🔒</div>
+            <div>
+              <div class="task-text">Final Project Report & Deployment</div>
+              <div class="task-sub">🔒 Blocked by: Str Project Submission</div>
+            </div>
+          </div>
+          <span class="task-pill pill-locked">Prerequisite Locked</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 2: ROUTINE (Daily Schedule & Timetable)
+         ========================================== -->
+    <section id="view-routine" class="tab-view">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title">Daily Routine & Habit Tracker</h1>
+          <p class="hero-subtitle">Structured focus time blocks for deep learning and exam mastery.</p>
+        </div>
+        <button class="hero-cta-btn" onclick="alert('Routine slot added!')">+ Add Time Block</button>
+      </div>
+
+      <div class="bento-grid">
+        <div class="bento-card span-4">
+          <div class="card-header">
+            <span class="card-title">Morning Focus Block</span>
+            <span class="stat-badge pill-done">09:00 AM - 11:30 AM</span>
+          </div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.4rem;">Discrete Math Set Theory</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Solving 25 objective problems and proofs.</p>
+          <div class="stat-badge pill-done">✓ Completed Today</div>
+        </div>
+
+        <div class="bento-card span-4" style="border-left: 3px solid var(--primary);">
+          <div class="card-header">
+            <span class="card-title">Afternoon Sprint</span>
+            <span class="stat-badge pill-progress">02:00 PM - 04:30 PM</span>
+          </div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.4rem;">Operating System Scheduling</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Round Robin and Shortest Job First simulation algorithms.</p>
+          <div class="stat-badge pill-progress">⚡ In Progress</div>
+        </div>
+
+        <div class="bento-card span-4">
+          <div class="card-header">
+            <span class="card-title">Evening Lab Work</span>
+            <span class="stat-badge pill-pending">06:00 PM - 07:30 PM</span>
+          </div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.4rem;">Database Project Practical</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Executing SQLite indexing and query benchmarks.</p>
+          <div class="stat-badge pill-pending">⏳ Scheduled</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 3: PLANS (Exam & Goal Roadmaps)
+         ========================================== -->
+    <section id="view-plans" class="tab-view">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title">Academic & Skill Plans</h1>
+          <p class="hero-subtitle">Target-driven countdown roadmaps with topic-wise syllabus tracking.</p>
+        </div>
+        <button class="hero-cta-btn" onclick="alert('+ Create New Plan modal!')">+ New Goal / Exam</button>
+      </div>
+
+      <div class="bento-card span-12" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+          <div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <span class="stat-badge pill-progress">Academic</span>
+              <span class="stat-badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted);">3 Months</span>
+            </div>
+            <h2 style="font-size: 1.4rem; font-weight: 800;">External Practicals & Lab Exams</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Comprehensive preparation roadmap for final semester practical viva and code submission.</p>
+          </div>
+          <div style="text-align: right;">
+            <div class="countdown-days">45</div>
+            <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase;">Days Remaining</div>
+          </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            <span>Syllabus Topics (2/3 Completed)</span>
+            <span style="color: var(--primary);">66%</span>
+          </div>
+          <div class="progress-track" style="margin-top: 0; margin-bottom: 1rem;">
+            <div class="progress-fill" style="width: 66%;"></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+            <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
+              <input type="checkbox" checked> <span style="text-decoration: line-through; color: var(--text-dim);">Operating Systems CPU Scheduling (4 hrs)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
+              <input type="checkbox" checked> <span style="text-decoration: line-through; color: var(--text-dim);">Database WAL Mode & ACID Transactions (6 hrs)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
+              <input type="checkbox"> <span>Computer Networks Socket Programming (5 hrs)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 4: MESSAGES (Admin <-> User Communication)
+         ========================================== -->
+    <section id="view-messages" class="tab-view">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title">Direct Messaging</h1>
+          <p class="hero-subtitle">Real-time communication between Admin and Users for task updates.</p>
+        </div>
+      </div>
+
+      <div class="chat-layout">
+        <!-- Sidebar -->
+        <div class="chat-sidebar">
+          <div class="chat-sidebar-header">
+            <span>Conversations</span>
+            <span class="stat-badge pill-done">Online</span>
+          </div>
+          <div class="conv-item active">
+            <div class="avatar" style="background: linear-gradient(135deg, #4f46e5, #9333ea);">A</div>
+            <div style="flex: 1; overflow: hidden;">
+              <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.88rem;">
+                <span>System Admin</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim);">12:30 PM</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Great work! Remember Final Report is dependent on...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Chat Thread -->
+        <div class="chat-main">
+          <div class="chat-main-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="avatar" style="background: linear-gradient(135deg, #4f46e5, #9333ea);">A</div>
+              <div>
+                <div style="font-weight: 800; font-size: 0.95rem;">System Admin (🛡️ Admin Portal)</div>
+                <div style="font-size: 0.75rem; color: var(--accent-emerald);">● Active now</div>
+              </div>
+            </div>
+            <span class="stat-badge" style="background: rgba(255,255,255,0.06); color: var(--text-muted);">Encrypted</span>
+          </div>
+
+          <div class="chat-bubbles" id="chatThread">
+            <div class="bubble bubble-admin">
+              <strong>Admin:</strong> Welcome to Taskaro! Please verify your project milestones for this semester.
+            </div>
+            <div class="bubble bubble-user">
+              <strong>Chiku:</strong> Hello Admin! I have started work on the Database Schema and Str Project documentation.
+            </div>
+            <div class="bubble bubble-admin">
+              <strong>Admin:</strong> Great work! Remember that Final Project Report is dependent on Str Project Submission.
+            </div>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" class="chat-input" id="chatMessageInput" placeholder="Write a message to Admin... (Press Enter to Send)" onkeydown="if(event.key === 'Enter') sendDemoMessage()">
+            <button class="chat-send-btn" onclick="sendDemoMessage()">Send →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 5: PROFILE (User & Admin Details Management)
+         ========================================== -->
+    <section id="view-profile" class="tab-view">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title">Account & Profile Settings</h1>
+          <p class="hero-subtitle">Manage personal information, role details, and credential preferences.</p>
+        </div>
+      </div>
+
+      <div class="profile-card">
+        <div class="profile-header-flex">
+          <div class="profile-avatar-large" id="profileAvatarBig">C</div>
+          <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800;" id="profileCardTitle">Chiku</h2>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+              <span class="stat-badge pill-progress" id="profileRoleBadge">USER ROLE</span>
+              <span class="stat-badge pill-done">Active Account</span>
+            </div>
+          </div>
+        </div>
+
+        <form onsubmit="saveProfileDetails(event)">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="inputProfileName" class="form-input" value="Chiku" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input type="email" id="inputProfileEmail" class="form-input" value="chiku@taskaro.com" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Age</label>
+              <input type="number" id="inputProfileAge" class="form-input" value="21" min="15" max="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Gender</label>
+              <select id="inputProfileGender" class="form-input">
+                <option value="Male" selected>Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+                <option value="Unspecified">Prefer not to say</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Avatar Color</label>
+              <input type="color" id="inputProfileColor" class="form-input" value="#6366f1" style="height: 48px; padding: 4px; cursor: pointer;">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Account Role</label>
+              <input type="text" class="form-input" value="Standard User" disabled style="opacity: 0.6; cursor: not-allowed;">
+            </div>
+          </div>
+
+          <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem;">Change Password</h3>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Current Password</label>
+                <input type="password" class="form-input" placeholder="••••••••">
+              </div>
+              <div class="form-group">
+                <label class="form-label">New Password (min 6 characters)</label>
+                <input type="password" class="form-input" placeholder="New secure password">
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="save-profile-btn">Save Profile Changes</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 6: MY TASKS (Comprehensive Task List)
+         ========================================== -->
+    <section id="view-tasks" class="tab-view">
+      <div class="hero-banner">
+        <div>
+          <h1 class="hero-title">My Tasks & Milestones</h1>
+          <p class="hero-subtitle">Complete task inventory with status filtering and priority management.</p>
+        </div>
+        <button class="hero-cta-btn" onclick="alert('+ Add New Task modal!')">+ Add Task</button>
+      </div>
+      <div class="task-list">
+        <div class="task-item">
+          <div class="task-left">
+            <div class="custom-checkbox checked">✓</div>
+            <div>
+              <div class="task-text" style="text-decoration: line-through; color: var(--text-dim);">Database Schema Design</div>
+              <div class="task-sub">High Priority • Completed yesterday</div>
+            </div>
+          </div>
+          <span class="task-pill pill-done">Completed</span>
+        </div>
+        <div class="task-item" style="border-left: 3px solid var(--primary);">
+          <div class="task-left">
+            <div class="custom-checkbox"></div>
+            <div>
+              <div class="task-text">API Endpoints Implementation</div>
+              <div class="task-sub">Medium Priority • Due Tomorrow</div>
+            </div>
+          </div>
+          <span class="task-pill pill-progress">In Progress</span>
+        </div>
+        <div class="task-item">
+          <div class="task-left">
+            <div class="custom-checkbox"></div>
+            <div>
+              <div class="task-text">Frontend Design Refactoring</div>
+              <div class="task-sub">Taste Skill & Impeccable Aesthetic Standard</div>
+            </div>
+          </div>
+          <span class="task-pill pill-pending">Pending</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 7: ASK AI (User Personal Assistant)
+         ========================================== -->
+    <section id="view-ai" class="tab-view">
+      <div class="hero-banner" style="margin-bottom: 1.5rem;">
+        <div>
+          <h1 class="hero-title">Ask AI Assistant ✨</h1>
+        </div>
+      </div>
+
+      <div class="chat-layout" style="height: 620px;">
+        <!-- Left: Quick Prompts (English Only) -->
+        <div class="chat-sidebar" style="width: 320px;">
+          <div class="chat-sidebar-header">
+            <span>Suggested Prompts</span>
+          </div>
+          <div style="padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem;">
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('What should I complete today?')">What should I complete today?</button>
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('How many tasks are pending?')">How many tasks are pending?</button>
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('Why is my task blocked?')">Why is my task blocked?</button>
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('Create a daily routine for me')">Create a daily routine for me</button>
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('External practicals preparation guide')">External practicals prep guide</button>
+            <button class="ai-prompt-btn" style="text-align: left;" onclick="triggerAIPrompt('Summarize my Python notes')">Summarize my Python notes</button>
+          </div>
+        </div>
+
+        <!-- Right: Interactive Conversation Thread -->
+        <div class="chat-main">
+          <div class="chat-main-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="avatar" style="background: linear-gradient(135deg, #6366f1, #06b6d4);">✨</div>
+              <div>
+                <div style="font-weight: 800; font-size: 0.95rem;">Taskaro Personal AI</div>
+                <div style="font-size: 0.75rem; color: var(--accent-emerald);">● Connected to your workspace database</div>
+              </div>
+            </div>
+            <span class="stat-badge pill-progress">Database-Aware</span>
+          </div>
+
+          <div class="chat-bubbles" id="aiChatThread" style="padding: 1.5rem; overflow-y: auto;">
+            <div class="bubble bubble-admin" style="background: rgba(99, 102, 241, 0.08); border-color: var(--border-accent);">
+              <strong>Taskaro AI:</strong> Hello Chiku! I am your personal Taskaro assistant. I have full context of your tasks, routines, exam roadmaps, and notes. How can I help you today?
+            </div>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" class="chat-input" id="aiQuestionInput" placeholder="Ask about tasks, deadlines, routines, or notes..." onkeydown="if(event.key === 'Enter') handleAskAISubmit()">
+            <button class="chat-send-btn" onclick="handleAskAISubmit()">Send ✨</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- POPUP TOAST -->
+  <div class="toast-msg" id="liveToast">✓ Profile Updated Successfully!</div>
+
+  <script>
+    // Tab Switching Functionality
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
+      
+      const targetView = document.getElementById('view-' + tabId);
+      const targetBtn = document.getElementById('tabBtn-' + tabId);
+      if (targetView) targetView.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Auto-switch to tab if provided in URL hash (e.g. demo.html#ai)
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && document.getElementById('view-' + hash)) {
+        switchTab(hash);
+      }
+    });
+
+    // Theme Toggle Functionality (Dark & Light Mode)
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+    }
+
+    // Live Search Functionality
+    function liveSearch(query) {
+      const q = query.toLowerCase().trim();
+      const items = document.querySelectorAll('.search-target');
+      items.forEach(el => {
+        const text = el.innerText.toLowerCase();
+        if (!q || text.includes(q)) {
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    // Direct Messaging Simulation
+    function sendDemoMessage() {
+      const input = document.getElementById('chatMessageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const thread = document.getElementById('chatThread');
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble bubble-user';
+      userBubble.innerHTML = `<strong>Chiku:</strong> ${escapeHtml(text)}`;
+      thread.appendChild(userBubble);
+      input.value = '';
+      thread.scrollTop = thread.scrollHeight;
+
+      // Simulated Admin Reply after 1.2s
+      setTimeout(() => {
+        const adminBubble = document.createElement('div');
+        adminBubble.className = 'bubble bubble-admin';
+        adminBubble.innerHTML = `<strong>Admin:</strong> Received your update: "${escapeHtml(text)}". Milestones noted!`;
+        thread.appendChild(adminBubble);
+        thread.scrollTop = thread.scrollHeight;
+      }, 1200);
+    }
+
+    // Profile Save Functionality
+    function saveProfileDetails(e) {
+      e.preventDefault();
+      const newName = document.getElementById('inputProfileName').value.trim();
+      document.getElementById('navDisplayName').innerText = newName;
+      document.getElementById('navAvatarLetter').innerText = newName.charAt(0).toUpperCase();
+      document.getElementById('profileAvatarBig').innerText = newName.charAt(0).toUpperCase();
+      document.getElementById('profileCardTitle').innerText = newName;
+      document.getElementById('welcomeHeading').innerText = `Good afternoon, ${newName}`;
+      
+      const toast = document.getElementById('liveToast');
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    // Ask AI Engine (User Personal Productivity Assistant)
+    function triggerAIPrompt(text) {
+      document.getElementById('aiQuestionInput').value = text;
+      handleAskAISubmit();
+    }
+
+    function handleAskAISubmit() {
+      const input = document.getElementById('aiQuestionInput');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const thread = document.getElementById('aiChatThread');
+      
+      // User bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bubble bubble-user';
+      userBubble.innerHTML = `<strong>Chiku:</strong> ${escapeHtml(q)}`;
+      thread.appendChild(userBubble);
+      input.value = '';
+      thread.scrollTop = thread.scrollHeight;
+
+      // Thinking indicator
+      const typingBubble = document.createElement('div');
+      typingBubble.className = 'bubble bubble-admin';
+      typingBubble.id = 'aiTyping';
+      typingBubble.innerHTML = `<em>Taskaro AI is thinking... ⏳</em>`;
+      thread.appendChild(typingBubble);
+      thread.scrollTop = thread.scrollHeight;
+
+      setTimeout(() => {
+        typingBubble.remove();
+        const answer = generateUserAIResponse(q);
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'bubble bubble-admin';
+        aiBubble.style.background = 'rgba(99, 102, 241, 0.08)';
+        aiBubble.style.borderColor = 'var(--border-accent)';
+        aiBubble.innerHTML = `<strong>Taskaro AI:</strong><br><br>${answer.replace(/\n/g, '<br>')}`;
+        thread.appendChild(aiBubble);
+        thread.scrollTop = thread.scrollHeight;
+      }, 600);
+    }
+
+    function generateUserAIResponse(question) {
+      const q = question.toLowerCase();
+
+      if (q.includes('today') || q.includes('complete') || q.includes('recommend') || q.includes('action plan')) {
+        return "🎯 **Today's Action Plan:**\n1. **Assignment 1 - Discrete Mathematics** (High Priority, Due Soon)\n2. **Operating Systems Scheduling Simulation** (In Progress)\n💡 *Tip: Complete Discrete Math proofs early in the morning before starting lab work.*";
+      }
+      if (q.includes('pending') || q.includes('how many') || q.includes('count')) {
+        return "You currently have **5 in-progress**, **3 pending**, and **1 completed** tasks out of 8 total tasks.";
+      }
+      if (q.includes('lock') || q.includes('block') || q.includes('why')) {
+        return "🔒 **Prerequisite Dependency:**\nYour **'Final Project Report'** is currently locked waiting for **'Str Project Submission'**. Once you complete the prerequisite task, it will automatically unlock!";
+      }
+      if (q.includes('routine') || q.includes('schedule') || q.includes('daily')) {
+        return "📅 **Optimized Daily Routine:**\n- **09:00 AM - 11:30 AM**: Discrete Math Problem Solving\n- **02:00 PM - 04:30 PM**: OS CPU Scheduling Algorithms\n- **06:00 PM - 07:30 PM**: Database Indexing & Lab Practical\nYour **15-day study streak** is active—keep it going!";
+      }
+      if (q.includes('exam') || q.includes('practical') || q.includes('guide') || q.includes('prep') || q.includes('target')) {
+        return "⏳ **External Practicals Countdown:**\n**45 days remaining** until 31 Dec 2026. 66% of syllabus topics completed. Finish Socket Programming this week to stay on track for an A+ grade!";
+      }
+      if (q.includes('note') || q.includes('python') || q.includes('summarize')) {
+        return "📝 **Summary of Python Notes:**\nCovers Generators, Decorators, and AsyncIO event loops. Key takeaway: Use async/await for non-blocking I/O operations and generators for memory-efficient stream processing.";
+      }
+      return "Hello Chiku! I am your personal Taskaro AI assistant. Ask me anything about your tasks, deadlines, locked prerequisites, daily routines, or notes.";
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

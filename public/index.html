@@ -261,7 +261,7 @@
               <rect x="13.5" y="13" width="7.5" height="7" rx="3.5" fill="white"/>
             </svg>
           </div>
-          <span>Home</span>
+          <span>Dashboard</span>
         </button>
 
         <button class="nav-item" data-tab="tasks" onclick="navigateToTab('tasks')">
@@ -290,25 +290,26 @@
           <span>Plans</span>
         </button>
 
-        <button class="nav-item" data-tab="notes" onclick="navigateToTab('notes')">
+        <button class="nav-item" data-tab="messages" onclick="navigateToTab('messages')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 6h2M4 10h2M4 14h2M4 18h2"/>
-            <rect x="6" y="3" width="14" height="18" rx="2"/>
-            <line x1="10" y1="8" x2="16" y2="8"/>
-            <line x1="10" y1="12" x2="16" y2="12"/>
-            <line x1="10" y1="16" x2="14" y2="16"/>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
-          <span>Notes</span>
+          <span>Messages</span>
+        </button>
+
+        <button class="nav-item" data-tab="profile" onclick="navigateToTab('profile')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>Profile</span>
         </button>
 
         <button class="nav-item" data-tab="ai" onclick="navigateToTab('ai')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            <circle cx="9" cy="10" r="1" fill="currentColor"/>
-            <circle cx="12" cy="10" r="1" fill="currentColor"/>
-            <circle cx="15" cy="10" r="1" fill="currentColor"/>
+            <path d="M12 2l2.4 5.6 5.6 2.4-5.6 2.4L12 18l-2.4-5.6L4 10l5.6-2.4z"/>
           </svg>
-          <span>Ask AI</span>
+          <span>Ask AI ✨</span>
         </button>
       </nav>
 
@@ -549,6 +550,39 @@
         <div id="fullNotesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;"></div>
       </section>
 
+      <!-- USER MESSAGES TAB (Direct Admin <-> User Communication) -->
+      <section id="tab-messages" class="tab-pane" style="display: none;">
+        <div class="workspace-banner">
+          <div>
+            <div class="workspace-tag">DIRECT INBOX</div>
+            <h1 class="workspace-greeting">Messages with Admin</h1>
+            <p class="workspace-subtext">Direct communication channel with your team administrator.</p>
+          </div>
+        </div>
+
+        <div class="chat-container" style="max-width: 860px; margin: 0 auto; height: 580px;">
+          <div class="chat-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div class="avatar-circle" style="background: #4f46e5; color: white;">A</div>
+              <div>
+                <div style="font-weight: 700; font-size: 0.95rem;">System Administrator</div>
+                <div style="font-size: 0.75rem; color: #10b981;">● Online</div>
+              </div>
+            </div>
+            <span class="badge-tag badge-primary">Direct Thread</span>
+          </div>
+
+          <div id="userMessagesThread" class="chat-messages-box">
+            <!-- Messages rendered dynamically -->
+          </div>
+
+          <form class="chat-input-row" onsubmit="handleUserSendMessage(event)">
+            <input type="text" id="userMessageInput" class="chat-input" placeholder="Type your message or project update to Admin..." required autocomplete="off">
+            <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
+          </form>
+        </div>
+      </section>
+
       <!-- USER ASK AI TAB -->
       <section id="tab-ai" class="tab-pane" style="display: none;">
         <div class="chat-container">
@@ -565,16 +599,21 @@
 
           <div id="userChatMessages" class="chat-messages-box">
             <div class="chat-bubble assistant">
-              Hello! I am your personal Taskaro assistant. I analyze your tasks, routines, exam roadmaps, and notes. How can I help you today?
+              Hello! I am your personal Taskaro AI assistant. I have full context of your tasks, routines, exam roadmaps, and notes. How can I help you today?
             </div>
           </div>
 
-          <div class="chat-suggestions-row">
-            <button class="suggestion-chip" onclick="askAiWithPrompt('What should I complete today?')">What should I complete today?</button>
-            <button class="suggestion-chip" onclick="askAiWithPrompt('How many tasks are pending?')">How many tasks are pending?</button>
-            <button class="suggestion-chip" onclick="askAiWithPrompt('Why is my task blocked?')">Why is my task blocked?</button>
-            <button class="suggestion-chip" onclick="askAiWithPrompt('Create a daily routine for me')">Create a daily routine for me</button>
-            <button class="suggestion-chip" onclick="askAiWithPrompt('Summarize my Python notes')">Summarize my Python notes</button>
+          <!-- Quick Suggested Prompts (English Only) -->
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin: 0.75rem 0 0.35rem;">
+            <span>Suggested Prompts:</span>
+          </div>
+          <div class="chat-suggestions-row" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('What should I complete today?')">What should I complete today?</button>
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('How many tasks are pending?')">How many tasks are pending?</button>
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('Why is my task blocked?')">Why is my task blocked?</button>
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('Create a daily routine for me')">Create a daily routine for me</button>
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('External practicals prep guide')">External practicals prep guide</button>
+            <button type="button" class="suggestion-chip" onclick="askAiWithPrompt('Summarize my Python notes')">Summarize my Python notes</button>
           </div>
 
           <form class="chat-input-row" onsubmit="handleSendAiMessage(event, 'userChatInput', 'userChatMessages')">
@@ -1145,19 +1184,23 @@
 
             <div id="adminChatMessages" class="chat-messages-box">
               <div class="chat-bubble assistant">
-                Hello Administrator. I can provide workload analytics, identify delayed tasks across team members, and give assignment recommendations.
+                Hello Administrator! I am the Taskaro System AI. I can analyze system-wide workload, delayed tasks, user metrics, and assignment guidance.
               </div>
             </div>
 
-            <div class="chat-suggestions-row">
-              <button class="suggestion-chip" onclick="askAdminAi('How many users are registered?')">How many users are registered?</button>
-              <button class="suggestion-chip" onclick="askAdminAi('Which users have overdue tasks?')">Which users have overdue tasks?</button>
-              <button class="suggestion-chip" onclick="askAdminAi('Which user has the highest workload?')">Which user has highest workload?</button>
-              <button class="suggestion-chip" onclick="askAdminAi('Suggest task assignments based on workload')">Suggest task assignments</button>
+            <!-- Admin Suggested Prompts (English Only) -->
+            <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin: 0.75rem 0 0.35rem;">
+              <span>Suggested Prompts:</span>
+            </div>
+            <div class="chat-suggestions-row" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <button type="button" class="suggestion-chip" onclick="askAdminAi('How many users are registered?')">How many users are registered?</button>
+              <button type="button" class="suggestion-chip" onclick="askAdminAi('Which users have overdue tasks?')">Which users have overdue tasks?</button>
+              <button type="button" class="suggestion-chip" onclick="askAdminAi('Which user has highest workload?')">Which user has highest workload?</button>
+              <button type="button" class="suggestion-chip" onclick="askAdminAi('Suggest task assignments based on workload')">Suggest task assignments</button>
             </div>
 
             <form class="chat-input-row" onsubmit="handleSendAiMessage(event, 'adminChatInput', 'adminChatMessages')">
-              <input type="text" id="adminChatInput" class="chat-input" placeholder="Ask system-level queries..." autocomplete="off">
+              <input type="text" id="adminChatInput" class="chat-input" placeholder="Ask admin queries about system workload, users, or delayed tasks..." autocomplete="off">
               <button type="submit" class="btn-primary" style="width: auto; padding: 0.75rem 1.5rem;">Send</button>
             </form>
           </div>

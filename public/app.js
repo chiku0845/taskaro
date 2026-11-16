@@ -298,6 +298,7 @@ function navigateToTab(tabName) {
   if (tabName === 'timetable') loadSchedules();
   if (tabName === 'plans') loadPlans();
   if (tabName === 'notes') loadNotes();
+  if (tabName === 'messages') loadUserMessages();
   if (tabName === 'profile') loadProfileSettings();
 
   // Admin tabs
@@ -1784,6 +1785,49 @@ async function handleAdminSendMessage(event) {
     await apiCall('/messages', 'POST', { receiver_id: state.selectedChatUserId, content });
     input.value = '';
     await selectAdminUserChat(state.selectedChatUserId, document.getElementById('adminChatRecipientName').textContent.replace('Chat with ', ''));
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// ----------------------------------------------------
+// USER MESSAGES (DIRECT ADMIN <-> USER)
+// ----------------------------------------------------
+async function loadUserMessages() {
+  const thread = document.getElementById('userMessagesThread');
+  if (!thread) return;
+  try {
+    const data = await apiCall('/messages');
+    const messages = data.messages || [];
+    if (messages.length === 0) {
+      thread.innerHTML = '<div style="color: var(--text-muted); text-align: center; margin-top: 2rem;">No messages exchanged yet. Send an update or question to your administrator below!</div>';
+      return;
+    }
+    thread.innerHTML = messages.map(m => {
+      const isMe = m.sender_id === state.user.userId;
+      return `
+        <div class="chat-bubble ${isMe ? 'user' : 'assistant'}">
+          <div style="font-weight: 700; font-size: 0.75rem; margin-bottom: 0.2rem;">${isMe ? 'You' : 'System Administrator'}</div>
+          ${escapeHtml(m.content)}
+        </div>
+      `;
+    }).join('');
+    thread.scrollTop = thread.scrollHeight;
+  } catch (err) {
+    console.error('Failed to load user messages:', err);
+  }
+}
+
+async function handleUserSendMessage(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('userMessageInput');
+  const content = input.value.trim();
+  if (!content) return;
+
+  try {
+    await apiCall('/messages', 'POST', { content });
+    input.value = '';
+    await loadUserMessages();
   } catch (err) {
     showToast(err.message, 'error');
   }
