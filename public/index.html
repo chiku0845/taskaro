@@ -272,6 +272,13 @@
           <span>My Tasks</span>
         </button>
 
+        <button class="nav-item" data-tab="projects" onclick="navigateToTab('projects')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span>Projects</span>
+        </button>
+
         <button class="nav-item" data-tab="timetable" onclick="navigateToTab('timetable')">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="4" width="18" height="16" rx="3"/>
@@ -364,89 +371,97 @@
 
     <!-- MAIN USER BODY -->
     <main class="main-content">
-      <!-- Sub-Navigation Action Bar (Exact match to crop media_1794765384557_e37f9e43.png) -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-        <div class="nav-search-box" style="width: 300px;">
-          <span class="nav-search-icon">🔍</span>
-          <input type="text" class="nav-search-input" placeholder="Search your tasks... ↵" onkeyup="handleGlobalSearch(event)">
-        </div>
-        <button class="floating-ask-ai-btn" onclick="navigateToTab('ai')">
-          <span style="font-size: 1rem; color: #6366f1;">✦</span> Ask AI
-        </button>
-      </div>
-
       <!-- USER HOME / DASHBOARD TAB -->
       <section id="tab-home" class="tab-pane">
-        <div class="workspace-banner">
+        <div class="workspace-banner" style="margin-bottom: 1.5rem;">
           <div>
             <div class="workspace-tag">YOUR WORKSPACE</div>
-            <h1 id="welcomeGreeting" class="workspace-greeting">Good evening, chiku</h1>
+            <h1 id="welcomeGreeting" class="workspace-greeting">Good evening, User</h1>
             <p class="workspace-subtext">A little progress each day adds up to big results.</p>
           </div>
-          <div>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <button class="btn-primary" style="width: auto; padding: 0.6rem 1.25rem;" onclick="openAddTaskModal()">
+              <span>+</span> New Task
+            </button>
             <button class="workspace-action-btn" onclick="navigateToTab('plans')">
               <span>🎯</span> Plans & Roadmaps
             </button>
           </div>
         </div>
 
-        <!-- 4 Stat Cards (Matches Image 2: Total tasks 8, Pending 3, In Progress 5, Completed 0) -->
-        <div class="stat-cards-grid">
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <span class="stat-card-title">Total tasks</span>
-              <div class="stat-icon-wrapper stat-icon-purple">📄</div>
+        <!-- MODERN BENTO GRID DASHBOARD -->
+        <div class="bento-grid">
+          <!-- Sprint Velocity / Milestone Progress (Span 8) -->
+          <div class="bento-card span-8">
+            <div class="bento-header">
+              <span class="bento-title">Sprint Velocity & Progress</span>
+              <span class="pill-badge pill-status-completed" id="bentoStatusBadge">On Track 🚀</span>
             </div>
-            <div id="statTotalTasks" class="stat-card-value">8</div>
-            <div class="stat-card-subtitle">All your tasks</div>
+            <div style="display: flex; align-items: baseline; gap: 0.75rem;">
+              <div id="bentoVelocityRate" class="bento-big-number">0%</div>
+              <span style="color: var(--text-muted); font-size: 0.95rem; font-weight: 600;">completion rate this cycle</span>
+            </div>
+            <div class="bento-progress-track">
+              <div id="bentoProgressFill" class="bento-progress-fill" style="width: 0%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-top: 0.6rem;">
+              <span><strong id="bentoRemainingTasks" style="color: var(--text-main);">0</strong> tasks remaining to reach milestone</span>
+              <span>Target: <strong id="bentoTargetGoal">100% velocity</strong></span>
+            </div>
           </div>
 
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <span class="stat-card-title">Pending</span>
-              <div class="stat-icon-wrapper stat-icon-amber">⏰</div>
-            </div>
-            <div id="statPendingTasks" class="stat-card-value">3</div>
-            <div class="stat-card-subtitle">Waiting to begin</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <span class="stat-card-title">In Progress</span>
-              <div class="stat-icon-wrapper stat-icon-blue">⚡</div>
-            </div>
-            <div id="statInProgressTasks" class="stat-card-value">5</div>
-            <div class="stat-card-subtitle">Actively working</div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-card-header">
-              <span class="stat-card-title">Completed</span>
-              <div class="stat-icon-wrapper stat-icon-green">✓</div>
-            </div>
-            <div id="statCompletedTasks" class="stat-card-value">0</div>
-            <div class="stat-card-subtitle">Nicely done</div>
-          </div>
-        </div>
-
-        <!-- Target & Plans Roadmap Card -->
-        <div class="roadmap-card">
-          <div class="roadmap-left">
-            <div class="roadmap-tag">TARGET & PLANS ROADMAP</div>
-            <div class="roadmap-title">Active Plan / Goal Prep</div>
-            <div class="roadmap-pills-row">
+          <!-- Goal Countdown (Span 4) -->
+          <div class="bento-card span-4" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(6, 182, 212, 0.05));">
+            <div class="bento-header">
+              <span class="bento-title">Target Goal Countdown</span>
               <span id="activeGoalCategory" class="badge-tag badge-primary">Academic</span>
-              <span id="activeGoalDuration" class="badge-tag">3 Months</span>
             </div>
-            <div id="activeGoalName" class="roadmap-goal-name">External praticals</div>
-            <div class="roadmap-countdown">
-              <span id="activeGoalDays" class="countdown-number">56</span> Days Remaining until Target • <span id="activeGoalTargetDate">31 Dec 2026</span>
+            <div id="activeGoalName" style="font-weight: 700; font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.5rem;">Semester Targets</div>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <span id="activeGoalDays" class="bento-big-number" style="color: var(--primary);">45</span>
+              <span style="color: var(--text-muted); font-weight: 600;">Days Remaining</span>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+              <span id="activeGoalTargetDate">Target: 31 Dec 2026</span>
+              <button class="btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="navigateToTab('plans')">Open Plan →</button>
             </div>
           </div>
-          <div>
-            <button class="roadmap-action-btn" onclick="navigateToTab('plans')">
-              Open Daily Roadmap →
-            </button>
+
+          <!-- 4 Stat Metric Cards (Span 3 each) -->
+          <div class="bento-card span-3">
+            <div class="bento-header">
+              <span class="bento-title">Total Tasks</span>
+              <span style="font-size: 1.25rem;">📄</span>
+            </div>
+            <div id="statTotalTasks" class="bento-big-number">0</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Assigned & personal</div>
+          </div>
+
+          <div class="bento-card span-3">
+            <div class="bento-header">
+              <span class="bento-title">In Progress</span>
+              <span style="font-size: 1.25rem;">⚡</span>
+            </div>
+            <div id="statInProgressTasks" class="bento-big-number" style="color: #3b82f6;">0</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Actively working</div>
+          </div>
+
+          <div class="bento-card span-3">
+            <div class="bento-header">
+              <span class="bento-title">Teams & Groups</span>
+              <span style="font-size: 1.25rem;">👥</span>
+            </div>
+            <div id="statActiveTeams" class="bento-big-number" style="color: #8b5cf6;">1</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Your shared teams</div>
+          </div>
+
+          <div class="bento-card span-3">
+            <div class="bento-header">
+              <span class="bento-title">Completed</span>
+              <span style="font-size: 1.25rem;">✓</span>
+            </div>
+            <div id="statCompletedTasks" class="bento-big-number" style="color: #10b981;">0</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Finished milestones</div>
           </div>
         </div>
 
@@ -495,6 +510,21 @@
         </div>
 
         <div id="fullTasksContainer" class="tasks-container"></div>
+      </section>
+
+      <!-- USER PROJECTS TAB -->
+      <section id="tab-projects" class="tab-pane" style="display: none;">
+        <div class="workspace-banner">
+          <div>
+            <div class="workspace-tag">COLLABORATION</div>
+            <h1 class="workspace-greeting">Projects & Initiatives</h1>
+            <p class="workspace-subtext">Track assigned team projects, group deliverables and milestone execution</p>
+          </div>
+        </div>
+
+        <div id="userProjectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+          <!-- Loaded dynamically -->
+        </div>
       </section>
 
       <!-- USER ROUTINE TAB -->
@@ -722,6 +752,21 @@
               <path d="m9 14 2 2 4-4"/>
             </svg>
             <span>Tasks List</span>
+          </button>
+          <button class="admin-nav-item" data-tab="admin-projects" onclick="navigateToTab('admin-projects')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span>Projects</span>
+          </button>
+          <button class="admin-nav-item" data-tab="admin-teams" onclick="navigateToTab('admin-teams')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span>Teams & Groups</span>
           </button>
           <button class="admin-nav-item" data-tab="admin-users" onclick="navigateToTab('admin-users')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -973,6 +1018,42 @@
                 <!-- Populated dynamically -->
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- 2B. ADMIN PROJECTS MANAGEMENT -->
+        <section id="tab-admin-projects" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">PROJECT OPERATIONS</div>
+              <h1 class="workspace-greeting">Projects & Initiatives</h1>
+              <p class="workspace-subtext">Coordinate cross-team projects, assign squad leads and track progress</p>
+            </div>
+            <button class="btn-primary" style="width: auto;" onclick="openCreateProjectModal()">
+              + New Project
+            </button>
+          </div>
+
+          <div id="adminProjectsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </section>
+
+        <!-- 2C. ADMIN TEAMS & GROUPS MANAGEMENT -->
+        <section id="tab-admin-teams" class="tab-pane" style="display: none;">
+          <div class="workspace-banner">
+            <div>
+              <div class="workspace-tag">ORGANIZATION</div>
+              <h1 class="workspace-greeting">Teams & Groups</h1>
+              <p class="workspace-subtext">Organize users into squads and groups for team-wide task & project assignments</p>
+            </div>
+            <button class="btn-primary" style="width: auto;" onclick="openCreateTeamModal()">
+              + Create Team / Group
+            </button>
+          </div>
+
+          <div id="adminTeamsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+            <!-- Populated dynamically via JS -->
           </div>
         </section>
 
@@ -1231,9 +1312,23 @@
           <label class="form-label">Description</label>
           <textarea id="taskDescription" class="form-input" rows="3" placeholder="Provide task context and requirements..."></textarea>
         </div>
-        <div class="form-group" id="adminAssigneeGroup" style="display: none;">
-          <label class="form-label">Assignee</label>
-          <select id="taskAssignee" class="form-input"></select>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Assign to Team / Group</label>
+            <select id="taskTeamSelect" class="form-input">
+              <option value="">None (Individual Task)</option>
+            </select>
+          </div>
+          <div class="form-group" id="adminAssigneeGroup" style="display: none;">
+            <label class="form-label">Assignee (User)</label>
+            <select id="taskAssignee" class="form-input"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link to Project</label>
+          <select id="taskProjectSelect" class="form-input">
+            <option value="">None (Standalone Task)</option>
+          </select>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
@@ -1342,6 +1437,94 @@
           <input type="password" id="adminNewUserPassword" class="form-input" required minlength="6" placeholder="Initial password">
         </div>
         <button type="submit" class="btn-primary">Create User</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Create Team Modal -->
+  <div id="adminCreateTeamModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create Team / Group</h3>
+        <button class="modal-close-btn" onclick="closeModal('adminCreateTeamModal')">×</button>
+      </div>
+      <form onsubmit="handleCreateTeam(event)">
+        <div class="form-group">
+          <label class="form-label">Team / Group Name</label>
+          <input type="text" id="newTeamName" class="form-input" placeholder="e.g. Core Engineering, Marketing, BCA Batch" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="newTeamDesc" class="form-input" rows="2" placeholder="Purpose or scope of this team..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Select Members to Add</label>
+          <div id="teamMembersCheckboxes" style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-card);">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Create Team</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Create Project Modal -->
+  <div id="adminCreateProjectModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Create New Project</h3>
+        <button class="modal-close-btn" onclick="closeModal('adminCreateProjectModal')">×</button>
+      </div>
+      <form onsubmit="handleCreateProject(event)">
+        <div class="form-group">
+          <label class="form-label">Project Title</label>
+          <input type="text" id="newProjTitle" class="form-input" placeholder="e.g. Taskaro Mobile App v1.0" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="newProjDesc" class="form-input" rows="2" placeholder="Brief project summary and goals..."></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Assigned Team / Group</label>
+            <select id="newProjTeamSelect" class="form-input">
+              <option value="">None (Cross-team)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Project Lead</label>
+            <select id="newProjLeadSelect" class="form-input"></select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Target Deadline</label>
+            <input type="date" id="newProjDeadline" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Initial Progress: <span id="newProjProgressLabel">0%</span></label>
+            <input type="range" id="newProjProgress" class="form-input" min="0" max="100" step="5" value="0" oninput="document.getElementById('newProjProgressLabel').textContent = this.value + '%'" style="padding: 0.2rem;">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Create Project</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Add Team Member Modal -->
+  <div id="adminAddMemberModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Member to Team</h3>
+        <button class="modal-close-btn" onclick="closeModal('adminAddMemberModal')">×</button>
+      </div>
+      <form onsubmit="handleAddMemberToTeam(event)">
+        <input type="hidden" id="addMemberTeamId">
+        <div class="form-group">
+          <label class="form-label">Select User</label>
+          <select id="addMemberUserSelect" class="form-input" required></select>
+        </div>
+        <button type="submit" class="btn-primary">Add Member</button>
       </form>
     </div>
   </div>

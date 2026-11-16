@@ -192,9 +192,12 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid email or password' });
   }
 
-  // If user selected specific portal (Admin vs User), verify they have access
+  // Strict Portal Separation: Admin cannot login from User Portal, User cannot login from Admin Portal
   if (portalRole === 'admin' && user.role !== 'admin') {
     return res.status(403).json({ error: 'Access denied: You do not have administrator permissions for Admin Portal.' });
+  }
+  if (portalRole === 'user' && user.role !== 'user') {
+    return res.status(403).json({ error: 'Access denied: This is an Administrator account. Please use Admin Login.' });
   }
 
   const now = new Date().toISOString();
@@ -297,26 +300,33 @@ app.get('/api/tasks', authMiddleware, (req, res) => {
     tasks = db.prepare(`
       SELECT t.*, u.name as assignee_name, u.email as assignee_email,
              c.name as creator_name,
-             p.title as prerequisite_title, p.status as prerequisite_status
+             p.title as prerequisite_title, p.status as prerequisite_status,
+             tm.name as team_name, prj.title as project_title
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.user_id
       LEFT JOIN users c ON t.creator_id = c.user_id
       LEFT JOIN tasks p ON t.prerequisite_task_id = p.task_id
+      LEFT JOIN teams tm ON t.team_id = tm.team_id
+      LEFT JOIN projects prj ON t.project_id = prj.project_id
       ORDER BY t.created_at DESC
     `).all();
   } else {
-    // Normal user sees tasks assigned to them or created by them
+    // Normal user sees tasks assigned to them, created by them, or assigned to their teams
     tasks = db.prepare(`
       SELECT t.*, u.name as assignee_name, u.email as assignee_email,
              c.name as creator_name,
-             p.title as prerequisite_title, p.status as prerequisite_status
+             p.title as prerequisite_title, p.status as prerequisite_status,
+             tm.name as team_name, prj.title as project_title
       FROM tasks t
       LEFT JOIN users u ON t.assignee_id = u.user_id
       LEFT JOIN users c ON t.creator_id = c.user_id
       LEFT JOIN tasks p ON t.prerequisite_task_id = p.task_id
+      LEFT JOIN teams tm ON t.team_id = tm.team_id
+      LEFT JOIN projects prj ON t.project_id = prj.project_id
       WHERE t.assignee_id = ? OR t.creator_id = ?
+         OR t.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?)
       ORDER BY t.created_at DESC
-    `).all(req.user.userId, req.user.userId);
+    `).all(req.user.userId, req.user.userId, req.user.userId);
   }
 
   const enriched = tasks.map(enrichTask);
@@ -333,6 +343,8 @@ app.post('/api/tasks', authMiddleware, (req, res) => {
     title,
     description,
     assignee_id,
+    team_id,
+    project_id,
     priority,
     deadline,
     duration_hours,
@@ -358,20 +370,22 @@ app.post('/api/tasks', authMiddleware, (req, res) => {
     }
   }
 
-  const targetAssignee = req.user.role === 'admin' ? (assignee_id || req.user.userId) : req.user.userId;
+  const targetAssignee = assignee_id || req.user.userId;
 
   try {
     db.prepare(`
       INSERT INTO tasks (
-        task_id, title, description, assignee_id, creator_id, priority,
+        task_id, title, description, assignee_id, team_id, project_id, creator_id, priority,
         status, task_type, prerequisite_task_id, deadline, progress,
         duration_hours, category, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       taskId,
       title.trim(),
       description || '',
       targetAssignee,
+      team_id || null,
+      project_id || null,
       req.user.userId,
       priority || 'Medium',
       initialStatus,
@@ -472,6 +486,8 @@ app.put('/api/tasks/:id', authMiddleware, (req, res) => {
       deadline = ?,
       duration_hours = ?,
       assignee_id = ?,
+      team_id = ?,
+      project_id = ?,
       prerequisite_task_id = ?,
       task_type = ?,
       completed_at = ?,
@@ -486,6 +502,8 @@ app.put('/api/tasks/:id', authMiddleware, (req, res) => {
     isAdmin && deadline !== undefined ? deadline : task.deadline,
     isAdmin && duration_hours !== undefined ? parseFloat(duration_hours) : task.duration_hours,
     isAdmin && assignee_id !== undefined ? assignee_id : task.assignee_id,
+    isAdmin && req.body.team_id !== undefined ? req.body.team_id : task.team_id,
+    isAdmin && req.body.project_id !== undefined ? req.body.project_id : task.project_id,
     isAdmin && prerequisite_task_id !== undefined ? prerequisite_task_id : task.prerequisite_task_id,
     isAdmin && task_type !== undefined ? task_type : task.task_type,
     completedAt,
@@ -598,6 +616,245 @@ app.post('/api/users', authMiddleware, adminMiddleware, (req, res) => {
   logActivity(req.user.userId, req.user.name, 'ADMIN_ADD_USER', 'User', userId, `Admin added user ${name} (${email})`);
 
   return res.json({ message: 'User added successfully', userId });
+});
+
+// ----------------------------------------------------
+// TEAMS & GROUPS MANAGEMENT
+// ----------------------------------------------------
+
+app.get('/api/teams', authMiddleware, (req, res) => {
+  try {
+    const teams = db.prepare(`
+      SELECT t.*, u.name as creator_name,
+             (SELECT COUNT(*) FROM team_members WHERE team_id = t.team_id) as member_count,
+             (SELECT COUNT(*) FROM tasks WHERE team_id = t.team_id) as task_count,
+             (SELECT COUNT(*) FROM projects WHERE team_id = t.team_id) as project_count
+      FROM teams t
+      LEFT JOIN users u ON t.created_by = u.user_id
+      ORDER BY t.created_at DESC
+    `).all();
+
+    const teamsWithMembers = teams.map(t => {
+      const members = db.prepare(`
+        SELECT u.user_id, u.name, u.email, u.role, tm.joined_at
+        FROM team_members tm
+        JOIN users u ON tm.user_id = u.user_id
+        WHERE tm.team_id = ?
+      `).all(t.team_id);
+      const isMember = members.some(m => m.user_id === req.user.userId);
+      return { ...t, members, is_member: isMember };
+    });
+
+    return res.json({ teams: teamsWithMembers });
+  } catch (err) {
+    console.error('Error fetching teams:', err);
+    return res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+app.post('/api/teams', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can create teams / groups.' });
+  }
+
+  const { name, description, member_ids } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Team name is required' });
+  }
+
+  const teamId = 'team_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+  const now = new Date().toISOString();
+
+  try {
+    db.prepare(`
+      INSERT INTO teams (team_id, name, description, created_by, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(teamId, name.trim(), description ? description.trim() : '', req.user.userId, now);
+
+    // Add creator to team
+    db.prepare('INSERT INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)').run(teamId, req.user.userId, now);
+
+    // Add initial selected members if provided
+    if (Array.isArray(member_ids)) {
+      const insertMember = db.prepare('INSERT OR IGNORE INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)');
+      for (const mId of member_ids) {
+        if (mId && mId !== req.user.userId) {
+          insertMember.run(teamId, mId, now);
+        }
+      }
+    }
+
+    logActivity(req.user.userId, req.user.name, 'CREATE_TEAM', 'Team', teamId, `Created team "${name.trim()}"`);
+    return res.json({ message: 'Team created successfully', teamId });
+  } catch (err) {
+    console.error('Error creating team:', err);
+    return res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+app.post('/api/teams/:id/members', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can modify team members.' });
+  }
+
+  const teamId = req.params.id;
+  const { user_id, user_ids } = req.body;
+  const idsToAdd = Array.isArray(user_ids) ? user_ids : (user_id ? [user_id] : []);
+
+  if (idsToAdd.length === 0) {
+    return res.status(400).json({ error: 'At least one user_id is required' });
+  }
+
+  const now = new Date().toISOString();
+  const insertMember = db.prepare('INSERT OR IGNORE INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)');
+  idsToAdd.forEach(uId => insertMember.run(teamId, uId, now));
+
+  return res.json({ message: 'Members added successfully' });
+});
+
+app.delete('/api/teams/:id/members/:userId', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can remove team members.' });
+  }
+
+  db.prepare('DELETE FROM team_members WHERE team_id = ? AND user_id = ?').run(req.params.id, req.params.userId);
+  return res.json({ message: 'Member removed from team' });
+});
+
+app.delete('/api/teams/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can delete teams.' });
+  }
+
+  const teamId = req.params.id;
+  db.prepare('DELETE FROM teams WHERE team_id = ?').run(teamId);
+  db.prepare('DELETE FROM team_members WHERE team_id = ?').run(teamId);
+  db.prepare('UPDATE tasks SET team_id = NULL WHERE team_id = ?').run(teamId);
+  db.prepare('UPDATE projects SET team_id = NULL WHERE team_id = ?').run(teamId);
+
+  logActivity(req.user.userId, req.user.name, 'DELETE_TEAM', 'Team', teamId, `Deleted team ${teamId}`);
+  return res.json({ message: 'Team deleted successfully' });
+});
+
+// ----------------------------------------------------
+// PROJECTS MANAGEMENT
+// ----------------------------------------------------
+
+app.get('/api/projects', authMiddleware, (req, res) => {
+  try {
+    const projects = db.prepare(`
+      SELECT p.*, tm.name as team_name, u.name as lead_name,
+             (SELECT COUNT(*) FROM tasks WHERE project_id = p.project_id) as total_tasks,
+             (SELECT COUNT(*) FROM tasks WHERE project_id = p.project_id AND status = 'Completed') as completed_tasks
+      FROM projects p
+      LEFT JOIN teams tm ON p.team_id = tm.team_id
+      LEFT JOIN users u ON p.lead_id = u.user_id
+      ORDER BY p.created_at DESC
+    `).all();
+
+    const enriched = projects.map(p => {
+      let calcProgress = p.progress || 0;
+      if (p.total_tasks > 0) {
+        calcProgress = Math.round((p.completed_tasks / p.total_tasks) * 100);
+      }
+      return {
+        ...p,
+        calculated_progress: calcProgress
+      };
+    });
+
+    return res.json({ projects: enriched });
+  } catch (err) {
+    console.error('Error fetching projects:', err);
+    return res.status(500).json({ error: 'Failed to fetch projects' });
+  }
+});
+
+app.post('/api/projects', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can create projects.' });
+  }
+
+  const { title, description, team_id, lead_id, deadline, status, progress } = req.body;
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: 'Project title is required' });
+  }
+
+  const projectId = 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+  const now = new Date().toISOString();
+
+  try {
+    db.prepare(`
+      INSERT INTO projects (project_id, title, description, team_id, lead_id, status, deadline, progress, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      projectId,
+      title.trim(),
+      description ? description.trim() : '',
+      team_id || null,
+      lead_id || req.user.userId,
+      status || 'Active',
+      deadline || null,
+      parseInt(progress) || 0,
+      now
+    );
+
+    logActivity(req.user.userId, req.user.name, 'CREATE_PROJECT', 'Project', projectId, `Created project "${title.trim()}"`);
+    return res.json({ message: 'Project created successfully', projectId });
+  } catch (err) {
+    console.error('Error creating project:', err);
+    return res.status(500).json({ error: 'Failed to create project' });
+  }
+});
+
+app.put('/api/projects/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can modify projects.' });
+  }
+
+  const projectId = req.params.id;
+  const project = db.prepare('SELECT * FROM projects WHERE project_id = ?').get(projectId);
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' });
+  }
+
+  const { title, description, team_id, lead_id, status, deadline, progress } = req.body;
+
+  db.prepare(`
+    UPDATE projects SET
+      title = ?,
+      description = ?,
+      team_id = ?,
+      lead_id = ?,
+      status = ?,
+      deadline = ?,
+      progress = ?
+    WHERE project_id = ?
+  `).run(
+    title !== undefined ? title.trim() : project.title,
+    description !== undefined ? description.trim() : project.description,
+    team_id !== undefined ? (team_id || null) : project.team_id,
+    lead_id !== undefined ? (lead_id || null) : project.lead_id,
+    status !== undefined ? status : project.status,
+    deadline !== undefined ? deadline : project.deadline,
+    progress !== undefined ? parseInt(progress) : project.progress,
+    projectId
+  );
+
+  return res.json({ message: 'Project updated successfully' });
+});
+
+app.delete('/api/projects/:id', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Permission denied: Only administrators can delete projects.' });
+  }
+
+  const projectId = req.params.id;
+  db.prepare('DELETE FROM projects WHERE project_id = ?').run(projectId);
+  db.prepare('UPDATE tasks SET project_id = NULL WHERE project_id = ?').run(projectId);
+
+  logActivity(req.user.userId, req.user.name, 'DELETE_PROJECT', 'Project', projectId, `Deleted project ${projectId}`);
+  return res.json({ message: 'Project deleted successfully' });
 });
 
 // ----------------------------------------------------

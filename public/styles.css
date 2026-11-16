@@ -2038,3 +2038,117 @@ select.form-input option {
     position: relative;
   }
 }
+
+/* ----------------------------------------------------
+   BENTO GRID & DASHBOARD MODERN UPGRADE
+   ---------------------------------------------------- */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+.bento-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.bento-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+.span-8 { grid-column: span 8; }
+.span-4 { grid-column: span 4; }
+.span-3 { grid-column: span 3; }
+.span-6 { grid-column: span 6; }
+.span-12 { grid-column: span 12; }
+
+@media (max-width: 1024px) {
+  .span-8, .span-4, .span-3, .span-6 {
+    grid-column: span 12;
+  }
+}
+
+.bento-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.bento-title {
+  font-size: 0.825rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+.bento-big-number {
+  font-size: 2.75rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-main);
+  letter-spacing: -0.03em;
+}
+.bento-progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  overflow: hidden;
+  margin: 1rem 0 0.5rem;
+}
+[data-theme="dark"] .bento-progress-track {
+  background: #334155;
+}
+.bento-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #06b6d4);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Teams & Projects Cards */
+.project-card, .team-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.project-card:hover, .team-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: var(--shadow-md);
+}
+.team-member-avatars {
+  display: flex;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+.team-avatar-stack {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #6366f1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: 2px solid var(--bg-card);
+  margin-left: -8px;
+}
+.team-avatar-stack:first-child {
+  margin-left: 0;
+}
+

@@ -19,6 +19,8 @@ const state = {
   schedules: [],
   notifications: [],
   users: [],
+  teams: [],
+  projects: [],
   stats: {},
   filterTaskState: 'all',
   selectedChatUserId: null
@@ -187,7 +189,7 @@ async function handleAuthSubmit(event) {
     const name = document.getElementById('authName').value.trim();
     const age = parseInt(document.getElementById('authAge').value) || 20;
     const gender = document.getElementById('authGender') ? document.getElementById('authGender').value : 'Unspecified';
-    const role = document.getElementById('authRoleSelect').value || state.portalRole;
+    const role = state.portalRole === 'admin' ? (document.getElementById('authRoleSelect').value || 'admin') : 'user';
     const confirmPassword = document.getElementById('authConfirmPassword').value;
 
     if (!name) {
@@ -283,6 +285,8 @@ function navigateToTab(tabName) {
     const titles = {
       'admin-dashboard': 'Dashboard Overview',
       'admin-tasks': 'Task Operations & Management',
+      'admin-projects': 'Projects & Initiatives',
+      'admin-teams': 'Teams & Groups Organization',
       'admin-users': 'Users & Access Control',
       'admin-reports': 'Team Analytics & Reports',
       'admin-messages': 'Team Communications',
@@ -295,6 +299,7 @@ function navigateToTab(tabName) {
   // Refresh view data
   if (tabName === 'home') renderHomeTab();
   if (tabName === 'tasks') renderTasksTab();
+  if (tabName === 'projects') loadProjects();
   if (tabName === 'timetable') loadSchedules();
   if (tabName === 'plans') loadPlans();
   if (tabName === 'notes') loadNotes();
@@ -304,6 +309,8 @@ function navigateToTab(tabName) {
   // Admin tabs
   if (tabName === 'admin-dashboard') renderAdminDashboardView();
   if (tabName === 'admin-tasks') renderAdminTasksView();
+  if (tabName === 'admin-projects') loadProjects();
+  if (tabName === 'admin-teams') loadTeams();
   if (tabName === 'admin-users') renderAdminUsersView();
   if (tabName === 'admin-reports') renderAdminReportsView();
   if (tabName === 'admin-messages') loadAdminMessages();
@@ -338,6 +345,8 @@ async function loadAllData() {
     await Promise.all([
       loadDashboardStats(),
       loadTasks(),
+      loadProjects(),
+      loadTeams(),
       loadNotifications(),
       loadPlans(),
       loadRoutines(),
@@ -379,10 +388,37 @@ async function loadDashboardStats() {
       const compRateEl = document.getElementById('analyticsCompRate');
       if (compRateEl) compRateEl.textContent = `${data.completionRate}%`;
     } else {
-      document.getElementById('statTotalTasks').textContent = data.totalTasks;
-      document.getElementById('statPendingTasks').textContent = data.pending;
-      document.getElementById('statInProgressTasks').textContent = data.inProgress;
-      document.getElementById('statCompletedTasks').textContent = data.completed;
+      const total = data.totalTasks || 0;
+      const pending = data.pending || 0;
+      const inProgress = data.inProgress || 0;
+      const completed = data.completed || 0;
+      const rate = data.completionRate || 0;
+
+      const rateEl = document.getElementById('bentoVelocityRate');
+      if (rateEl) rateEl.textContent = `${rate}%`;
+      const fillEl = document.getElementById('bentoProgressFill');
+      if (fillEl) fillEl.style.width = `${rate}%`;
+      const remEl = document.getElementById('bentoRemainingTasks');
+      if (remEl) remEl.textContent = Math.max(0, total - completed);
+
+      const badgeEl = document.getElementById('bentoStatusBadge');
+      if (badgeEl) {
+        badgeEl.textContent = rate >= 50 ? 'On Track 🚀' : (total === 0 ? 'Ready to Start ✨' : 'In Progress ⚡');
+      }
+
+      const totalEl = document.getElementById('statTotalTasks');
+      if (totalEl) totalEl.textContent = total;
+      const pEl = document.getElementById('statPendingTasks');
+      if (pEl) pEl.textContent = pending;
+      const ipEl = document.getElementById('statInProgressTasks');
+      if (ipEl) ipEl.textContent = inProgress;
+      const cEl = document.getElementById('statCompletedTasks');
+      if (cEl) cEl.textContent = completed;
+
+      const teamCountEl = document.getElementById('statActiveTeams');
+      if (teamCountEl) {
+        teamCountEl.textContent = state.teams ? state.teams.length : 1;
+      }
     }
   } catch (err) {
     console.error(err);
@@ -647,6 +683,16 @@ function renderTaskCardHtml(t, showAssignee = false) {
                 👤 ${escapeHtml(t.assignee_name)}
               </span>
             ` : ''}
+            ${t.team_name ? `
+              <span class="pill-badge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1;">
+                👥 ${escapeHtml(t.team_name)}
+              </span>
+            ` : ''}
+            ${t.project_title ? `
+              <span class="pill-badge" style="background: rgba(16, 185, 129, 0.12); color: #059669;">
+                📁 ${escapeHtml(t.project_title)}
+              </span>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -790,6 +836,7 @@ function openAddTaskModal() {
   const adminGroup = document.getElementById('adminAssigneeGroup');
   adminGroup.style.display = 'block';
   populateAssigneeDropdown();
+  populateTeamAndProjectDropdowns();
 
   toggleDependencyPicker();
   const saveBtn = document.getElementById('taskSubmitBtn');
@@ -843,6 +890,7 @@ function openEditTaskModal(taskId) {
   if (admin) {
     adminGroup.style.display = 'block';
     populateAssigneeDropdown(task.assignee_id);
+    populateTeamAndProjectDropdowns(task.team_id, task.project_id);
   } else {
     adminGroup.style.display = 'none';
   }
@@ -924,6 +972,12 @@ async function handleSaveTask(event) {
 
     const assigneeSelect = document.getElementById('taskAssignee');
     if (assigneeSelect) body.assignee_id = assigneeSelect.value;
+
+    const teamSelect = document.getElementById('taskTeamSelect');
+    if (teamSelect) body.team_id = teamSelect.value || null;
+
+    const projectSelect = document.getElementById('taskProjectSelect');
+    if (projectSelect) body.project_id = projectSelect.value || null;
 
     const statusSelect = document.getElementById('taskStatusSelect');
     if (statusSelect && editId) body.status = statusSelect.value;
@@ -1501,7 +1555,10 @@ function filterAdminTasksTable() {
         <td><span class="pill-badge pill-task-id">${formattedId}</span></td>
         <td>
           <div style="font-weight: 600;">${escapeHtml(t.title)}</div>
-          <div style="font-size: 0.75rem; color: var(--text-light);">${t.category || 'General'}</div>
+          <div style="font-size: 0.75rem; color: var(--text-light);">
+            ${t.category || 'General'}
+            ${t.project_title ? ` • 📁 ${escapeHtml(t.project_title)}` : ''}
+          </div>
         </td>
         <td><span class="pill-badge ${statusClass}">${t.status}</span></td>
         <td><span class="pill-badge pill-priority-${t.priority.toLowerCase()}">${t.priority}</span></td>
@@ -1510,7 +1567,10 @@ function filterAdminTasksTable() {
             <div class="avatar-circle" style="width: 24px; height: 24px; font-size: 0.75rem; background: #2563eb;">
               ${(t.assignee_name || 'U').charAt(0).toUpperCase()}
             </div>
-            <span>${escapeHtml(t.assignee_name || 'Unassigned')}</span>
+            <div>
+              <div>${escapeHtml(t.assignee_name || 'Unassigned')}</div>
+              ${t.team_name ? `<div style="font-size: 0.72rem; color: #6366f1; font-weight: 600;">👥 ${escapeHtml(t.team_name)}</div>` : ''}
+            </div>
           </div>
         </td>
         <td style="font-size: 0.85rem; color: var(--text-muted);">${deadlineStr}</td>
@@ -1857,6 +1917,343 @@ async function loadAdminLogsView() {
 
 function openAdminAssignTaskModal() {
   openAddTaskModal();
+}
+
+// ----------------------------------------------------
+// TEAMS & PROJECTS MANAGEMENT
+// ----------------------------------------------------
+
+function populateTeamAndProjectDropdowns(selectedTeamId = null, selectedProjectId = null) {
+  const teamSelect = document.getElementById('taskTeamSelect');
+  if (teamSelect) {
+    teamSelect.innerHTML = '<option value="">None (Individual Task)</option>' + 
+      (state.teams || []).map(t => `<option value="${t.team_id}" ${selectedTeamId === t.team_id ? 'selected' : ''}>👥 ${escapeHtml(t.name)}</option>`).join('');
+  }
+
+  const projSelect = document.getElementById('taskProjectSelect');
+  if (projSelect) {
+    projSelect.innerHTML = '<option value="">None (Standalone Task)</option>' +
+      (state.projects || []).map(p => `<option value="${p.project_id}" ${selectedProjectId === p.project_id ? 'selected' : ''}>📁 ${escapeHtml(p.title)}</option>`).join('');
+  }
+}
+
+async function loadProjects() {
+  try {
+    const data = await apiCall('/projects');
+    state.projects = data.projects || [];
+    renderProjectsViews();
+  } catch (err) {
+    console.error('Failed to load projects:', err);
+  }
+}
+
+function renderProjectsViews() {
+  // Render User Projects Grid
+  const userGrid = document.getElementById('userProjectsGrid');
+  if (userGrid) {
+    if (state.projects.length === 0) {
+      userGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📁</div>
+          <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main);">No active projects assigned yet</div>
+          <div style="font-size: 0.85rem; margin-top: 0.25rem;">Projects coordinated by your team or administrator will appear here.</div>
+        </div>
+      `;
+    } else {
+      userGrid.innerHTML = state.projects.map(p => {
+        const progress = p.calculated_progress || p.progress || 0;
+        let deadlineStr = 'No deadline';
+        if (p.deadline) {
+          const d = new Date(p.deadline);
+          deadlineStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        return `
+          <div class="project-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <span class="pill-badge pill-status-progress">${p.status || 'Active'}</span>
+                ${p.team_name ? `<span class="pill-badge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1;">👥 ${escapeHtml(p.team_name)}</span>` : ''}
+              </div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem;">${escapeHtml(p.title)}</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem;">${escapeHtml(p.description || 'No description provided')}</p>
+            </div>
+            <div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">
+                <span>Progress: ${p.completed_tasks || 0}/${p.total_tasks || 0} tasks</span>
+                <span style="color: var(--primary); font-weight: 700;">${progress}%</span>
+              </div>
+              <div class="bento-progress-track" style="margin: 0 0 1rem 0;">
+                <div class="bento-progress-fill" style="width: ${progress}%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-light); border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <span>Lead: <strong>${escapeHtml(p.lead_name || 'Admin')}</strong></span>
+                <span>📅 ${deadlineStr}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Render Admin Projects Container
+  const adminContainer = document.getElementById('adminProjectsContainer');
+  if (adminContainer) {
+    if (state.projects.length === 0) {
+      adminContainer.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📁</div>
+          <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main);">No projects created yet</div>
+          <p style="font-size: 0.85rem; margin: 0.5rem 0 1rem;">Create initiatives and link tasks to teams.</p>
+          <button class="btn-primary" onclick="openCreateProjectModal()">+ New Project</button>
+        </div>
+      `;
+    } else {
+      adminContainer.innerHTML = state.projects.map(p => {
+        const progress = p.calculated_progress || p.progress || 0;
+        let deadlineStr = 'No deadline';
+        if (p.deadline) {
+          const d = new Date(p.deadline);
+          deadlineStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        return `
+          <div class="project-card">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+                <span class="pill-badge ${p.status === 'Completed' ? 'pill-status-completed' : 'pill-status-progress'}">${p.status || 'Active'}</span>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button class="icon-action-btn delete" title="Delete project" onclick="deleteProject('${p.project_id}')">🗑</button>
+                </div>
+              </div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem;">${escapeHtml(p.title)}</h3>
+              <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem;">${escapeHtml(p.description || 'No description provided')}</p>
+            </div>
+            <div>
+              <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                ${p.team_name ? `<span class="pill-badge" style="background: rgba(99, 102, 241, 0.12); color: #6366f1;">👥 ${escapeHtml(p.team_name)}</span>` : '<span class="pill-badge" style="background: #f1f5f9; color: var(--text-muted);">No Team</span>'}
+                <span class="pill-badge" style="background: #eff6ff; color: #2563eb;">👤 Lead: ${escapeHtml(p.lead_name || 'Admin')}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">
+                <span>Tasks: ${p.completed_tasks || 0}/${p.total_tasks || 0} completed</span>
+                <span style="color: var(--primary); font-weight: 700;">${progress}%</span>
+              </div>
+              <div class="bento-progress-track" style="margin: 0 0 1rem 0;">
+                <div class="bento-progress-fill" style="width: ${progress}%;"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-light); border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+                <span>Target: <strong>${deadlineStr}</strong></span>
+                <button class="btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" onclick="openAdminAssignTaskModal()">+ Add Task</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+async function loadTeams() {
+  try {
+    const data = await apiCall('/teams');
+    state.teams = data.teams || [];
+    renderTeamsViews();
+  } catch (err) {
+    console.error('Failed to load teams:', err);
+  }
+}
+
+function renderTeamsViews() {
+  const container = document.getElementById('adminTeamsContainer');
+  if (!container) return;
+
+  if (state.teams.length === 0) {
+    container.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
+        <div style="font-weight: 700; font-size: 1.1rem; color: var(--text-main);">No teams or groups created yet</div>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 1rem;">Group users together into departments or study groups for collective task assignment.</p>
+        <button class="btn-primary" onclick="openCreateTeamModal()">+ Create Team / Group</button>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = state.teams.map(t => {
+    const members = t.members || [];
+    const memberChips = members.map(m => `
+      <span class="pill-badge" style="background: rgba(99, 102, 241, 0.08); color: var(--text-main); font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+        👤 ${escapeHtml(m.name)}
+        <button onclick="removeTeamMember('${t.team_id}', '${m.user_id}')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-weight:700;padding:0 2px;" title="Remove member">×</button>
+      </span>
+    `).join(' ');
+
+    return `
+      <div class="team-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <span class="pill-badge" style="background: #eef2ff; color: #4f46e5; font-weight: 700;">
+              👥 ${members.length} Members
+            </span>
+            <button class="icon-action-btn delete" title="Delete Team" onclick="deleteTeam('${t.team_id}')">🗑</button>
+          </div>
+          <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">${escapeHtml(t.name)}</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1rem;">${escapeHtml(t.description || 'No description')}</p>
+
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--text-light); margin-bottom: 0.4rem;">Members:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+              ${members.length > 0 ? memberChips : '<span style="font-size: 0.8rem; color: var(--text-light);">No members assigned yet</span>'}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <span>Tasks: <strong>${t.task_count || 0}</strong> • Projects: <strong>${t.project_count || 0}</strong></span>
+            <button class="btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="openAddMemberModal('${t.team_id}')">+ Add Member</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openCreateTeamModal() {
+  document.getElementById('newTeamName').value = '';
+  document.getElementById('newTeamDesc').value = '';
+
+  const container = document.getElementById('teamMembersCheckboxes');
+  if (container) {
+    if (!state.users || state.users.length === 0) {
+      container.innerHTML = '<span style="color: var(--text-muted);">No users found.</span>';
+    } else {
+      container.innerHTML = state.users.map(u => `
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+          <input type="checkbox" name="teamMemberCheckbox" value="${u.user_id}">
+          <span>${escapeHtml(u.name)} (${escapeHtml(u.email)}) [${u.role}]</span>
+        </label>
+      `).join('');
+    }
+  }
+
+  openModal('adminCreateTeamModal');
+}
+
+async function handleCreateTeam(event) {
+  event.preventDefault();
+  const name = document.getElementById('newTeamName').value.trim();
+  const description = document.getElementById('newTeamDesc').value.trim();
+  const checked = Array.from(document.querySelectorAll('input[name="teamMemberCheckbox"]:checked')).map(cb => cb.value);
+
+  try {
+    await apiCall('/teams', 'POST', { name, description, member_ids: checked });
+    showToast(`Team "${name}" created successfully!`, 'success');
+    closeModal('adminCreateTeamModal');
+    await loadTeams();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openAddMemberModal(teamId) {
+  document.getElementById('addMemberTeamId').value = teamId;
+  const select = document.getElementById('addMemberUserSelect');
+  if (select) {
+    select.innerHTML = (state.users || []).map(u => `
+      <option value="${u.user_id}">${escapeHtml(u.name)} (${escapeHtml(u.email)})</option>
+    `).join('');
+  }
+  openModal('adminAddMemberModal');
+}
+
+async function handleAddMemberToTeam(event) {
+  event.preventDefault();
+  const teamId = document.getElementById('addMemberTeamId').value;
+  const userId = document.getElementById('addMemberUserSelect').value;
+
+  try {
+    await apiCall(`/teams/${teamId}/members`, 'POST', { user_id: userId });
+    showToast('Member added to team!', 'success');
+    closeModal('adminAddMemberModal');
+    await loadTeams();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function removeTeamMember(teamId, userId) {
+  if (!confirm('Are you sure you want to remove this member from the team?')) return;
+  try {
+    await apiCall(`/teams/${teamId}/members/${userId}`, 'DELETE');
+    showToast('Member removed from team', 'info');
+    await loadTeams();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteTeam(teamId) {
+  if (!confirm('Are you sure you want to delete this team?')) return;
+  try {
+    await apiCall(`/teams/${teamId}`, 'DELETE');
+    showToast('Team deleted', 'info');
+    await loadTeams();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openCreateProjectModal() {
+  document.getElementById('newProjTitle').value = '';
+  document.getElementById('newProjDesc').value = '';
+  document.getElementById('newProjDeadline').value = '';
+  document.getElementById('newProjProgress').value = 0;
+  document.getElementById('newProjProgressLabel').textContent = '0%';
+
+  const teamSelect = document.getElementById('newProjTeamSelect');
+  if (teamSelect) {
+    teamSelect.innerHTML = '<option value="">None (Cross-team)</option>' +
+      (state.teams || []).map(t => `<option value="${t.team_id}">👥 ${escapeHtml(t.name)}</option>`).join('');
+  }
+
+  const leadSelect = document.getElementById('newProjLeadSelect');
+  if (leadSelect) {
+    leadSelect.innerHTML = (state.users || []).map(u => `
+      <option value="${u.user_id}" ${state.user && u.user_id === state.user.userId ? 'selected' : ''}>${escapeHtml(u.name)}</option>
+    `).join('');
+  }
+
+  openModal('adminCreateProjectModal');
+}
+
+async function handleCreateProject(event) {
+  event.preventDefault();
+  const title = document.getElementById('newProjTitle').value.trim();
+  const description = document.getElementById('newProjDesc').value.trim();
+  const team_id = document.getElementById('newProjTeamSelect').value || null;
+  const lead_id = document.getElementById('newProjLeadSelect').value || null;
+  const deadline = document.getElementById('newProjDeadline').value || null;
+  const progress = parseInt(document.getElementById('newProjProgress').value) || 0;
+
+  try {
+    await apiCall('/projects', 'POST', { title, description, team_id, lead_id, deadline, progress });
+    showToast(`Project "${title}" created successfully!`, 'success');
+    closeModal('adminCreateProjectModal');
+    await loadProjects();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteProject(projectId) {
+  if (!confirm('Are you sure you want to delete this project?')) return;
+  try {
+    await apiCall(`/projects/${projectId}`, 'DELETE');
+    showToast('Project deleted', 'info');
+    await loadProjects();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 // ----------------------------------------------------

@@ -196,17 +196,77 @@ function initDatabase() {
       details TEXT NOT NULL,
       timestamp TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS teams (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      team_id TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS team_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      team_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      joined_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      project_id TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      team_id TEXT,
+      lead_id TEXT,
+      status TEXT DEFAULT 'Active',
+      deadline TEXT,
+      progress INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
   `);
 
-  // Migrate existing databases to have gender column if not present
-  try {
-    db.exec(`ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'Unspecified';`);
-  } catch (e) {
-    // Column already exists
-  }
+  // Migrate existing databases to have columns if not present
+  try { db.exec(`ALTER TABLE users ADD COLUMN gender TEXT DEFAULT 'Unspecified';`); } catch (e) {}
+  try { db.exec(`ALTER TABLE tasks ADD COLUMN team_id TEXT;`); } catch (e) {}
+  try { db.exec(`ALTER TABLE tasks ADD COLUMN project_id TEXT;`); } catch (e) {}
+
+  // Seed default teams & projects if empty
+  seedTeamsAndProjects();
 
   // Seed default data if database is brand new
   seedInitialData();
+}
+
+function seedTeamsAndProjects() {
+  try {
+    const teamCount = db.prepare('SELECT COUNT(*) as count FROM teams').get().count;
+    if (teamCount === 0) {
+      const now = new Date().toISOString();
+      const admin = db.prepare("SELECT user_id FROM users WHERE role = 'admin' LIMIT 1").get();
+      const adminId = admin ? admin.user_id : 'user_admin_001';
+      const chiku = db.prepare("SELECT user_id FROM users WHERE LOWER(name) LIKE '%chiku%' OR LOWER(name) LIKE '%chiky%' LIMIT 1").get();
+      const chikuId = chiku ? chiku.user_id : 'user_chiku_002';
+
+      db.prepare(`
+        INSERT INTO teams (team_id, name, description, created_by, created_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run('team_001', 'Core Engineering Team', 'Core product development and full-stack tasks', adminId, now);
+
+      db.prepare('INSERT INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)').run('team_001', adminId, now);
+      if (chikuId) {
+        db.prepare('INSERT INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)').run('team_001', chikuId, now);
+      }
+
+      db.prepare(`
+        INSERT INTO projects (project_id, title, description, team_id, lead_id, status, deadline, progress, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run('proj_001', 'Taskaro Web Platform Launch', 'Complete modern task management with user & admin portals', 'team_001', adminId, 'Active', '2026-12-31', 65, now);
+    }
+  } catch (err) {
+    console.error('Error seeding teams & projects:', err);
+  }
 }
 
 function seedInitialData() {
