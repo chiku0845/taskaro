@@ -47,9 +47,122 @@ def get_auth_user(request):
         return get_user_from_token(parts[1])
     return None
 
+def ensure_user_starter_data(user):
+    if not user:
+        return
+
+    # 1. Shared Team
+    team = Team.objects.first()
+    if not team:
+        team = Team.objects.create(
+            team_id='team_' + secrets.token_hex(5),
+            name='MCA & Engineering Aspirants Group',
+            description='Collaborative workspace for task assignments, syllabus roadmaps and group discussions',
+            created_by=user.user_id
+        )
+    TeamMember.objects.get_or_create(team_id=team.team_id, user_id=user.user_id)
+
+    # 2. Shared Project
+    proj = Project.objects.filter(team_id=team.team_id).first()
+    if not proj:
+        proj = Project.objects.create(
+            project_id='proj_' + secrets.token_hex(5),
+            title='NIMCET 2026 Comprehensive Prep & Syllabus Tracker',
+            description='Milestone execution for Mathematics, Computer Awareness, Analytical Ability and Timed Mocks',
+            team_id=team.team_id,
+            lead_id=user.user_id,
+            status='Active',
+            deadline='2026-12-31',
+            progress=45
+        )
+
+    # 3. Default NIMCET Preparation Plan
+    if Plan.objects.filter(user_id=user.user_id).count() == 0:
+        plan_id = 'plan_' + secrets.token_hex(5)
+        p = Plan.objects.create(
+            plan_id=plan_id,
+            user_id=user.user_id,
+            goal_name='NIMCET MCA 2026 Preparation & Syllabus Tracker',
+            category='Academic',
+            target_date='2026-12-31',
+            start_date='2026-06-01',
+            duration_label='6 Months',
+            description='Targeted daily preparation roadmap for NIMCET MCA entrance: Mathematics, Logical Reasoning, Computer Awareness, and Mock tests.',
+            completed_hours=48.0,
+            target_hours=300.0
+        )
+        nimcet_topics = [
+            ("Coordinate Geometry & 2D/3D (Maths)", 3.0, "Completed"),
+            ("Trigonometry & Calculus (Maths)", 3.0, "Completed"),
+            ("Probability & Statistics (Maths)", 2.5, "Pending"),
+            ("Algebra, Vectors & Matrices (Maths)", 2.5, "Pending"),
+            ("Logical Reasoning & Puzzles (Analytical)", 2.0, "Pending"),
+            ("Data Interpretation & Venn Diagrams", 1.5, "Pending"),
+            ("Computer Awareness - Number Systems & Logic Gates", 1.5, "Completed"),
+            ("General English Comprehension & Vocab", 1.0, "Pending"),
+            ("NIMCET Mock Test 01 - Full Length Analysis", 2.0, "Pending")
+        ]
+        for title, hrs, status_val in nimcet_topics:
+            PlanTopic.objects.create(
+                topic_id='topic_' + secrets.token_hex(5),
+                plan_id=p.plan_id,
+                title=title,
+                allocated_hours=hrs,
+                status=status_val
+            )
+
+    # 4. Default Daily Routines (with streak and log entries for the consistency graph)
+    if Routine.objects.filter(user_id=user.user_id).count() == 0:
+        routines_data = [
+            ('Maths Practice - Vectors & Calculus', '06:30 AM', 4),
+            ('Logical Reasoning & Analytical Puzzles', '10:00 AM', 6),
+            ('Computer Awareness & Digital Logic', '03:30 PM', 2),
+            ('Daily Revision & NIMCET MCQ Solving', '08:30 PM', 5)
+        ]
+        yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime('%Y-%m-%d')
+        day_before_str = (datetime.now(timezone.utc) - timedelta(days=2)).strftime('%Y-%m-%d')
+        skip_day_str = (datetime.now(timezone.utc) - timedelta(days=3)).strftime('%Y-%m-%d')
+
+        for title, sched_time, strk in routines_data:
+            r = Routine.objects.create(
+                routine_id='rt_' + secrets.token_hex(5),
+                user_id=user.user_id,
+                title=title,
+                routine_type='academic',
+                scheduled_time=sched_time,
+                streak=strk
+            )
+            RoutineLog.objects.create(log_id='log_' + secrets.token_hex(6), routine_id=r.routine_id, user_id=user.user_id, date=yesterday_str, status='Completed')
+            RoutineLog.objects.create(log_id='log_' + secrets.token_hex(6), routine_id=r.routine_id, user_id=user.user_id, date=day_before_str, status='Completed')
+            RoutineLog.objects.create(log_id='log_' + secrets.token_hex(6), routine_id=r.routine_id, user_id=user.user_id, date=skip_day_str, status='Skipped')
+
+    # 5. Default Tasks
+    if Task.objects.filter(models.Q(assignee_id=user.user_id) | models.Q(creator_id=user.user_id)).count() == 0:
+        tasks_data = [
+            ('Solve 30 Coordinate Geometry MCQs', 'Practice NIMCET previous years questions on 2D lines and circles', 'High', 'In Progress', 60, 2.5, 'Mathematics'),
+            ('Revise Number System Conversions & Gates', 'Review 2s complement, binary arithmetic, and truth tables', 'High', 'Completed', 100, 1.5, 'Computer Awareness'),
+            ('Attempt Full-Length NIMCET Mock Test 1', 'Timed exam simulation of 120 questions in 2 hours', 'Urgent', 'Pending', 0, 2.0, 'Mock Test'),
+            ('Review Formulas for Differential Equations', 'Make quick formula cheat sheet for Calculus topics', 'Medium', 'In Progress', 40, 1.0, 'Mathematics')
+        ]
+        for title, desc, prio, stat, prog, dur, cat in tasks_data:
+            Task.objects.create(
+                task_id='task_' + secrets.token_hex(5),
+                title=title,
+                description=desc,
+                assignee_id=user.user_id,
+                creator_id=user.user_id,
+                team_id=team.team_id,
+                project_id=proj.project_id if proj else None,
+                priority=prio,
+                status=stat,
+                task_type='Independent',
+                deadline=(datetime.now(timezone.utc) + timedelta(days=7)).strftime('%Y-%m-%d %H:%M'),
+                progress=prog,
+                duration_hours=dur,
+                category=cat
+            )
+
 def seed_defaults():
-    # Clean slate requested by user: No dummy admin, dummy users, or sample tasks seeded.
-    # Users and admins register cleanly through the Sign Up portal.
     pass
 
 # ----------------------------------------------------
@@ -92,6 +205,8 @@ class SignupView(APIView):
             avatar_color='#2563eb'
         )
 
+        ensure_user_starter_data(user)
+
         token = generate_auth_token(user)
         log_activity(user.user_id, user.name, 'USER_SIGNUP', 'User', user.user_id, f"User registered: {user.name} ({user.email})")
 
@@ -131,6 +246,7 @@ class LoginView(APIView):
 
         user.last_login = dj_timezone.now()
         user.save(update_fields=['last_login'])
+        ensure_user_starter_data(user)
 
         token = generate_auth_token(user)
         log_activity(user.user_id, user.name, 'USER_LOGIN', 'User', user.user_id, f"User logged in from {portal_role} portal")
@@ -256,10 +372,10 @@ class GoogleOAuthView(APIView):
 
 class DashboardStatsView(APIView):
     def get(self, request):
-        seed_defaults()
         user = get_auth_user(request)
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
 
         is_admin = user.role == 'admin'
 
@@ -319,10 +435,10 @@ class DashboardStatsView(APIView):
 
 class TaskListView(APIView):
     def get(self, request):
-        seed_defaults()
         user = get_auth_user(request)
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
 
         is_admin = user.role == 'admin'
         if is_admin:
@@ -474,10 +590,10 @@ class TaskDetailView(APIView):
 
 class TeamListView(APIView):
     def get(self, request):
-        seed_defaults()
         user = get_auth_user(request)
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
 
         if user.role == 'admin':
             teams = Team.objects.all().order_by('-created_at')
@@ -570,10 +686,10 @@ class TeamDetailView(APIView):
 
 class ProjectListView(APIView):
     def get(self, request):
-        seed_defaults()
         user = get_auth_user(request)
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
 
         if user.role == 'admin':
             projects = Project.objects.all().order_by('-created_at')
@@ -735,6 +851,7 @@ class RoutineListView(APIView):
     def get(self, request):
         user = get_auth_user(request)
         if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
         routines = Routine.objects.filter(user_id=user.user_id).order_by('scheduled_time')
         today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
@@ -857,6 +974,7 @@ class PlanListView(APIView):
     def get(self, request):
         user = get_auth_user(request)
         if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        ensure_user_starter_data(user)
         plans = Plan.objects.filter(user_id=user.user_id).order_by('-created_at')
         results = []
         now = datetime.now(timezone.utc)
