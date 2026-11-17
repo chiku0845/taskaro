@@ -95,7 +95,9 @@ class Plan(models.Model):
     goal_name = models.CharField(max_length=250)
     category = models.CharField(max_length=100, default='Academic')
     target_date = models.CharField(max_length=50)
+    start_date = models.CharField(max_length=50, blank=True, default='')
     duration_label = models.CharField(max_length=100, default='3 Months')
+    description = models.TextField(blank=True, default='')
     completed_hours = models.FloatField(default=0)
     target_hours = models.FloatField(default=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -106,6 +108,14 @@ class PlanMilestone(models.Model):
     title = models.CharField(max_length=250)
     due_week = models.IntegerField(default=1)
     completed = models.BooleanField(default=False)
+
+class PlanTopic(models.Model):
+    topic_id = models.CharField(max_length=100, primary_key=True)
+    plan_id = models.CharField(max_length=100)
+    title = models.CharField(max_length=250)
+    allocated_hours = models.FloatField(default=2.0)
+    status = models.CharField(max_length=50, default='Pending') # 'Pending', 'Completed', 'Skipped'
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class Note(models.Model):
     note_id = models.CharField(max_length=100, primary_key=True)

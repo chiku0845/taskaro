@@ -300,7 +300,7 @@ function navigateToTab(tabName) {
   if (tabName === 'home') renderHomeTab();
   if (tabName === 'tasks') renderTasksTab();
   if (tabName === 'projects') loadProjects();
-  if (tabName === 'timetable') loadSchedules();
+  if (tabName === 'timetable') { loadRoutines(); loadSchedules(); }
   if (tabName === 'plans') loadPlans();
   if (tabName === 'notes') loadNotes();
   if (tabName === 'messages') loadUserMessages();
@@ -486,8 +486,10 @@ async function loadPlans() {
 async function loadRoutines() {
   try {
     const data = await apiCall('/routines');
-    state.routines = data.routines;
+    state.routines = data.routines || [];
+    state.routineAnalytics = data.analytics || {};
     renderHomeRoutines();
+    renderRoutineTab();
   } catch (err) {
     console.error('Failed to load routines:', err);
   }
@@ -578,19 +580,27 @@ function renderHomeRoutines() {
 
   container.innerHTML = state.routines.map(r => {
     const isCompleted = r.today_status === 'Completed';
+    const isSkipped = r.today_status === 'Skipped';
     return `
-      <div class="task-item-card" style="padding: 0.85rem 1rem;">
+      <div class="task-item-card" style="padding: 0.85rem 1rem; ${isCompleted ? 'border-color: #a7f3d0; background: rgba(16, 185, 129, 0.04);' : (isSkipped ? 'border-color: #fecaca; background: rgba(239, 68, 68, 0.04);' : '')}">
         <div style="flex: 1;">
-          <div style="font-weight: 600; font-size: 0.95rem; ${isCompleted ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
-            ${escapeHtml(r.title)}
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <span style="font-weight: 600; font-size: 0.95rem; ${isCompleted ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+              ${escapeHtml(r.title)}
+            </span>
+            ${isCompleted ? '<span class="pill-badge" style="background: #d1fae5; color: #047857; font-size: 0.72rem; padding: 1px 6px;">✓ Done Today</span>' : ''}
+            ${isSkipped ? '<span class="pill-badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; padding: 1px 6px;">⚠️ Day Skipped</span>' : ''}
           </div>
           <div style="font-size: 0.785rem; color: var(--text-light);">
             ⏰ ${r.scheduled_time} • 🔥 Streak: ${r.streak} days
           </div>
         </div>
-        <div style="display: flex; gap: 0.4rem;">
-          <button class="btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; ${isCompleted ? 'background: #d1fae5; color: #059669;' : ''}" onclick="logRoutineStatus('${r.routine_id}', 'Completed')">
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button class="btn-outline" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; ${isCompleted ? 'background: #d1fae5; color: #059669; font-weight: 700;' : ''}" onclick="logRoutineStatus('${r.routine_id}', 'Completed')">
             ${isCompleted ? '✓ Done' : 'Complete'}
+          </button>
+          <button class="btn-outline" style="padding: 0.35rem 0.55rem; font-size: 0.8rem; ${isSkipped ? 'background: #fee2e2; color: #b91c1c; font-weight: 700;' : ''}" title="Mark day as skipped" onclick="logRoutineStatus('${r.routine_id}', 'Skipped')">
+            ${isSkipped ? 'Skipped' : '⏭ Skip'}
           </button>
         </div>
       </div>
@@ -1043,58 +1053,302 @@ async function logRoutineStatus(routineId, status) {
   }
 }
 
+async function deleteRoutine(routineId) {
+  if (!confirm('Are you sure you want to delete this routine?')) return;
+  try {
+    await apiCall(`/routines/${routineId}`, 'DELETE');
+    showToast('Routine deleted successfully', 'info');
+    await loadRoutines();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+let chartRoutineConsistencyInstance = null;
+
+function renderRoutineTab() {
+  // 1. Render routine checklist in Routine tab
+  const tabList = document.getElementById('tabRoutineListContainer');
+  if (tabList) {
+    if (state.routines.length === 0) {
+      tabList.innerHTML = '<div style="color: var(--text-muted); padding: 1.5rem; text-align: center; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px dashed var(--border-color);">No daily routines configured. Click "+ Add Daily Routine" to get started!</div>';
+    } else {
+      tabList.innerHTML = state.routines.map(r => {
+        const isCompleted = r.today_status === 'Completed';
+        const isSkipped = r.today_status === 'Skipped';
+        return `
+          <div class="task-item-card" style="padding: 1rem 1.25rem; ${isCompleted ? 'border-color: #a7f3d0; background: rgba(16, 185, 129, 0.04);' : (isSkipped ? 'border-color: #fecaca; background: rgba(239, 68, 68, 0.04);' : '')}">
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+                <span style="font-weight: 700; font-size: 1rem; color: var(--text-main); ${isCompleted ? 'text-decoration: line-through; opacity: 0.6;' : ''}">
+                  ${escapeHtml(r.title)}
+                </span>
+                ${isCompleted ? '<span class="pill-badge" style="background: #d1fae5; color: #047857; font-size: 0.75rem; padding: 2px 8px;">✓ Done Today</span>' : ''}
+                ${isSkipped ? '<span class="pill-badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; padding: 2px 8px;">⚠️ Day Skipped</span>' : ''}
+                ${!isCompleted && !isSkipped ? '<span class="pill-badge" style="background: #f1f5f9; color: var(--text-muted); font-size: 0.75rem; padding: 2px 8px;">Pending</span>' : ''}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 1rem;">
+                <span>⏰ Scheduled: <strong>${r.scheduled_time}</strong></span>
+                <span>🔥 Streak: <strong>${r.streak} days</strong></span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button class="btn-outline" style="padding: 0.4rem 0.85rem; font-size: 0.85rem; ${isCompleted ? 'background: #d1fae5; color: #047857; font-weight: 700;' : ''}" onclick="logRoutineStatus('${r.routine_id}', 'Completed')">
+                ${isCompleted ? '✓ Completed' : 'Complete'}
+              </button>
+              <button class="btn-outline" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; ${isSkipped ? 'background: #fee2e2; color: #b91c1c; font-weight: 700;' : ''}" title="Mark this day as skipped" onclick="logRoutineStatus('${r.routine_id}', 'Skipped')">
+                ${isSkipped ? '⚠️ Skipped' : '⏭ Skip'}
+              </button>
+              <button class="icon-action-btn delete" title="Delete routine" onclick="deleteRoutine('${r.routine_id}')">
+                🗑
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2. Render Analytics summary pills
+  const analytics = state.routineAnalytics || {};
+  const maxStreak = Math.max(0, ...state.routines.map(r => r.streak || 0));
+  const streakEl = document.getElementById('routineHeaderStreakCount');
+  if (streakEl) streakEl.textContent = maxStreak;
+
+  const compEl = document.getElementById('routineWeeklyCompletedCount');
+  if (compEl) compEl.textContent = `✓ ${analytics.total_completed_week || 0} Completed this week`;
+
+  const skipEl = document.getElementById('routineWeeklySkippedCount');
+  if (skipEl) skipEl.textContent = `⚠️ ${analytics.total_skipped_week || 0} Days Skipped`;
+
+  // Render specific skipped days pills
+  const skippedDaysContainer = document.getElementById('routineSkippedDaysPills');
+  if (skippedDaysContainer) {
+    const list = analytics.skipped_days_list || [];
+    if (list.length > 0) {
+      skippedDaysContainer.innerHTML = '<span style="font-size: 0.78rem; color: var(--text-muted); margin-left: 0.5rem;">Skipped dates:</span>' + list.slice(0, 4).map(d => `
+        <span class="badge-tag" style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; padding: 2px 7px;">${d}</span>
+      `).join('');
+    } else {
+      skippedDaysContainer.innerHTML = '<span style="font-size: 0.78rem; color: #059669; margin-left: 0.5rem;">🎉 Zero skipped days recently!</span>';
+    }
+  }
+
+  // Render 7-day pill breakdown
+  const pillRow = document.getElementById('routineWeeklyPillRow');
+  if (pillRow && analytics.labels && analytics.dates) {
+    pillRow.innerHTML = analytics.labels.map((lbl, idx) => {
+      const dt = analytics.dates[idx];
+      const comp = analytics.completed ? analytics.completed[idx] : 0;
+      const skip = analytics.skipped ? analytics.skipped[idx] : 0;
+      let badgeClass = '';
+      let statusIcon = '○';
+      if (comp > 0) {
+        badgeClass = 'completed';
+        statusIcon = '✓';
+      } else if (skip > 0) {
+        badgeClass = 'skipped';
+        statusIcon = '⚠️';
+      }
+      return `
+        <div class="day-badge ${badgeClass}" title="${dt}: ${comp} done, ${skip} skipped">
+          <span style="font-weight: 700;">${lbl}</span>
+          <span style="font-size: 0.85rem; margin-top: 2px;">${statusIcon}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 3. Render Chart.js
+  renderRoutineConsistencyChart();
+}
+
+function renderRoutineConsistencyChart() {
+  if (typeof Chart === 'undefined') return;
+  const canvas = document.getElementById('chartRoutineWeeklyConsistency');
+  if (!canvas) return;
+
+  const analytics = state.routineAnalytics || {};
+  const labels = analytics.labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const completedData = analytics.completed || [0, 0, 0, 0, 0, 0, 0];
+  const skippedData = analytics.skipped || [0, 0, 0, 0, 0, 0, 0];
+
+  if (chartRoutineConsistencyInstance) {
+    chartRoutineConsistencyInstance.destroy();
+  }
+
+  chartRoutineConsistencyInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Completed Routines',
+          data: completedData,
+          backgroundColor: '#10b981',
+          borderRadius: 6,
+          maxBarThickness: 32
+        },
+        {
+          label: 'Skipped Days',
+          data: skippedData,
+          backgroundColor: '#f43f5e',
+          borderRadius: 6,
+          maxBarThickness: 32
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            boxWidth: 12,
+            font: { size: 11, weight: '600' }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return ` ${context.dataset.label}: ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, precision: 0 }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
 // ----------------------------------------------------
-// EXAM PLANS & ROADMAPS
+// EXAM PLANS & ROADMAPS (NIMCET & ACADEMICS)
 // ----------------------------------------------------
 function renderPlansTab() {
   const container = document.getElementById('plansListContainer');
   if (!container) return;
 
   if (state.plans.length === 0) {
-    container.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">No plans yet. Click "+ New Goal / Exam" to create one.</div>';
+    container.innerHTML = `
+      <div style="color: var(--text-muted); padding: 3rem; text-align: center; background: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎯</div>
+        <div style="font-weight: 700; font-size: 1.15rem; color: var(--text-main);">No Exam Plans or Roadmaps Created</div>
+        <p style="font-size: 0.85rem; margin: 0.5rem 0 1.25rem;">Start your NIMCET or BCA preparation roadmap with duration options and checkable daily tasks.</p>
+        <button class="btn-primary" onclick="openAddPlanModal()">+ Create NIMCET Plan</button>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = state.plans.map(p => `
-    <div class="roadmap-card" style="margin-bottom: 1.5rem; flex-direction: column; align-items: stretch;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-        <div>
-          <div class="roadmap-pills-row">
-            <span class="badge-tag badge-primary">${escapeHtml(p.category || 'Academic')}</span>
-            <span class="badge-tag">${escapeHtml(p.duration_label || '3 Months')}</span>
-          </div>
-          <h2 class="roadmap-title" style="margin-bottom: 0.35rem;">${escapeHtml(p.goal_name)}</h2>
-          <p style="font-size: 0.9rem; color: var(--text-muted);">${escapeHtml(p.description || '')}</p>
-        </div>
-        <div style="text-align: right;">
-          <div class="countdown-number">${p.daysRemaining}</div>
-          <div style="font-size: 0.8rem; color: var(--text-light);">Days Remaining</div>
-        </div>
-      </div>
+  container.innerHTML = state.plans.map(p => {
+    const totalTopics = p.totalTopics || (p.topics ? p.topics.length : 0);
+    const completedTopics = p.completedTopics || 0;
+    const skippedTopics = p.skippedTopics || 0;
+    const progressPercent = p.progressPercent || 0;
 
-      <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h4 style="font-size: 0.95rem;">Syllabus / Topics (${p.completedTopics}/${p.totalTopics} Completed)</h4>
-          <span style="font-weight: 700; color: var(--primary);">${p.progressPercent}%</span>
-        </div>
-        <div class="progress-bar-bg" style="height: 8px; margin-bottom: 1rem;">
-          <div class="progress-bar-fill" style="width: ${p.progressPercent}%;"></div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-          ${(p.topics || []).map(t => `
-            <div style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
-              <input type="checkbox" ${t.status === 'Completed' ? 'checked' : ''} onchange="toggleTopicComplete('${t.topic_id}', this.checked)">
-              <span style="${t.status === 'Completed' ? 'text-decoration: line-through; color: var(--text-light);' : ''}">${escapeHtml(t.title)} (${t.allocated_hours} hrs)</span>
+    let targetDateStr = 'Not set';
+    if (p.target_date) {
+      const td = new Date(p.target_date);
+      targetDateStr = td.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    return `
+      <div class="roadmap-card" style="margin-bottom: 2rem; flex-direction: column; align-items: stretch;">
+        <!-- Plan Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <div class="roadmap-pills-row">
+              <span class="badge-tag badge-primary">${escapeHtml(p.category || 'Academic')}</span>
+              <span class="badge-tag" style="background: #e0e7ff; color: #4338ca; font-weight: 700;">⏱ ${escapeHtml(p.duration_label || '3 Months')}</span>
+              <span class="badge-tag">Target: ${targetDateStr}</span>
             </div>
-          `).join('')}
+            <h2 class="roadmap-title" style="margin-bottom: 0.35rem; font-size: 1.45rem;">${escapeHtml(p.goal_name)}</h2>
+            ${p.description ? `<p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.4;">${escapeHtml(p.description)}</p>` : ''}
+          </div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="text-align: right; background: #eff6ff; padding: 0.5rem 1rem; border-radius: var(--radius-md);">
+              <div class="countdown-number" style="font-size: 1.75rem; line-height: 1;">${p.daysRemaining}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Days Remaining</div>
+            </div>
+            <div style="display: flex; gap: 0.4rem;">
+              <button class="icon-action-btn" title="Edit plan duration & details" onclick="openEditPlanModal('${p.plan_id}')">✏️</button>
+              <button class="icon-action-btn delete" title="Delete plan" onclick="deletePlan('${p.plan_id}')">🗑</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Syllabus / Daily Tasks Section -->
+        <div style="background: var(--bg-page); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">
+                Syllabus & Daily Preparation Checklist
+              </h4>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">
+                ${completedTopics} of ${totalTopics} completed • <strong style="color: #e11d48;">${skippedTopics} skipped</strong>
+              </div>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+              <span style="font-weight: 800; font-size: 1.15rem; color: var(--primary);">${progressPercent}%</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Syllabus Covered</span>
+            </div>
+          </div>
+
+          <div class="bento-progress-track" style="margin: 0.25rem 0 1rem 0; height: 10px;">
+            <div class="bento-progress-fill" style="width: ${progressPercent}%;"></div>
+          </div>
+
+          <!-- Topics List -->
+          <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
+            ${(p.topics && p.topics.length > 0) ? p.topics.map(t => {
+              const isDone = t.status === 'Completed';
+              const isSkip = t.status === 'Skipped';
+              return `
+                <div class="topic-item-row ${isDone ? 'completed' : (isSkip ? 'skipped' : '')}">
+                  <div style="display: flex; align-items: center; gap: 0.65rem; flex: 1;">
+                    <input type="checkbox" ${isDone ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" onchange="toggleTopicStatus('${t.topic_id}', this.checked ? 'Completed' : 'Pending')">
+                    <div>
+                      <span class="topic-title-text ${isDone ? 'completed' : (isSkip ? 'skipped' : '')}">
+                        ${escapeHtml(t.title)}
+                      </span>
+                      <span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.35rem;">(${t.allocated_hours} hrs)</span>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    ${isSkip ? `<span class="pill-badge" style="background: #fee2e2; color: #b91c1c; font-size: 0.7rem; padding: 2px 6px;">Day Skipped</span>` : ''}
+                    <button class="btn-outline" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; ${isSkip ? 'background: #fee2e2; color: #b91c1c; font-weight: 700;' : ''}" title="Mark as skipped" onclick="toggleTopicStatus('${t.topic_id}', '${isSkip ? 'Pending' : 'Skipped'}')">
+                      ${isSkip ? 'Undo Skip' : '⏭ Skip'}
+                    </button>
+                    <button class="icon-action-btn delete" style="width: 26px; height: 26px; font-size: 0.75rem;" title="Delete topic" onclick="deleteTopic('${t.topic_id}')">
+                      ×
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('') : `
+              <div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.75rem; text-align: center;">
+                No daily tasks / syllabus topics added yet. Click "+ Add Daily Task" below!
+              </div>
+            `}
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <button class="btn-outline" style="font-size: 0.825rem;" onclick="openAddTopicModal('${p.plan_id}')">+ Add Daily Task / Topic</button>
+            <button class="btn-primary" style="width: auto; padding: 0.4rem 0.85rem; font-size: 0.825rem;" onclick="openPrepSessionModal()">⏱ Log Study Time</button>
+          </div>
         </div>
       </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-        <button class="btn-outline" style="font-size: 0.85rem;" onclick="promptAddTopic('${p.plan_id}')">+ Add Topic</button>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function openAddPlanModal() {
@@ -1108,11 +1362,12 @@ async function handleSavePlan(event) {
   const duration_label = document.getElementById('planDuration').value.trim();
   const start_date = document.getElementById('planStartDate').value;
   const target_date = document.getElementById('planTargetDate').value;
+  const target_hours = document.getElementById('planTargetHours') ? document.getElementById('planTargetHours').value : 300;
   const description = document.getElementById('planDesc').value.trim();
 
   try {
-    await apiCall('/plans', 'POST', { goal_name, category, duration_label, start_date, target_date, description });
-    showToast('Goal plan created successfully', 'success');
+    await apiCall('/plans', 'POST', { goal_name, category, duration_label, start_date, target_date, target_hours, description });
+    showToast('Plan created successfully with roadmap topics!', 'success');
     closeModal('addPlanModal');
     await loadPlans();
   } catch (err) {
@@ -1120,22 +1375,90 @@ async function handleSavePlan(event) {
   }
 }
 
-async function promptAddTopic(planId) {
-  const title = prompt('Enter new topic title:');
-  if (!title) return;
-  const hours = prompt('Allocated study hours:', '2.0');
+function openEditPlanModal(planId) {
+  const p = (state.plans || []).find(x => x.plan_id === planId);
+  if (!p) return;
+
+  document.getElementById('editPlanId').value = p.plan_id;
+  document.getElementById('editPlanGoalName').value = p.goal_name;
+  document.getElementById('editPlanCategory').value = p.category || 'Academic';
+  document.getElementById('editPlanDuration').value = p.duration_label || '3 Months';
+  document.getElementById('editPlanStartDate').value = p.start_date || '';
+  document.getElementById('editPlanTargetDate').value = p.target_date ? p.target_date.substring(0, 10) : '';
+  if (document.getElementById('editPlanTargetHours')) {
+    document.getElementById('editPlanTargetHours').value = p.target_hours || 300;
+  }
+  document.getElementById('editPlanDesc').value = p.description || '';
+  openModal('editPlanModal');
+}
+
+async function handleSaveEditPlan(event) {
+  event.preventDefault();
+  const planId = document.getElementById('editPlanId').value;
+  const goal_name = document.getElementById('editPlanGoalName').value.trim();
+  const category = document.getElementById('editPlanCategory').value;
+  const duration_label = document.getElementById('editPlanDuration').value.trim();
+  const start_date = document.getElementById('editPlanStartDate').value;
+  const target_date = document.getElementById('editPlanTargetDate').value;
+  const target_hours = document.getElementById('editPlanTargetHours') ? document.getElementById('editPlanTargetHours').value : 300;
+  const description = document.getElementById('editPlanDesc').value.trim();
+
   try {
-    await apiCall(`/plans/${planId}/topics`, 'POST', { title, allocated_hours: hours });
-    showToast('Topic added', 'success');
+    await apiCall(`/plans/${planId}`, 'PUT', { goal_name, category, duration_label, start_date, target_date, target_hours, description });
+    showToast('Plan updated successfully', 'success');
+    closeModal('editPlanModal');
     await loadPlans();
   } catch (err) {
     showToast(err.message, 'error');
   }
 }
 
-async function toggleTopicComplete(topicId, isChecked) {
+async function deletePlan(planId) {
+  if (!confirm('Are you sure you want to delete this plan and all associated topics?')) return;
   try {
-    await apiCall(`/plans/topics/${topicId}`, 'PUT', { status: isChecked ? 'Completed' : 'Pending' });
+    await apiCall(`/plans/${planId}`, 'DELETE');
+    showToast('Plan removed', 'info');
+    await loadPlans();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+function openAddTopicModal(planId) {
+  document.getElementById('planTopicPlanId').value = planId;
+  document.getElementById('planTopicTitle').value = '';
+  document.getElementById('planTopicHours').value = '2.5';
+  openModal('addPlanTopicModal');
+}
+
+async function handleSavePlanTopic(event) {
+  event.preventDefault();
+  const planId = document.getElementById('planTopicPlanId').value;
+  const title = document.getElementById('planTopicTitle').value.trim();
+  const allocated_hours = document.getElementById('planTopicHours').value;
+
+  try {
+    await apiCall(`/plans/${planId}/topics`, 'POST', { title, allocated_hours });
+    showToast('Daily task / topic added!', 'success');
+    closeModal('addPlanTopicModal');
+    await loadPlans();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function toggleTopicStatus(topicId, status) {
+  try {
+    await apiCall(`/plans/topics/${topicId}`, 'PUT', { status });
+    await loadPlans();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function deleteTopic(topicId) {
+  try {
+    await apiCall(`/plans/topics/${topicId}`, 'DELETE');
     await loadPlans();
   } catch (err) {
     showToast(err.message, 'error');
@@ -1334,7 +1657,8 @@ async function handleSendAiMessage(event, inputId, messagesBoxId) {
 
   try {
     const res = await apiCall('/ai/ask', 'POST', { question });
-    typingBubble.innerHTML = formatMarkdown(res.answer);
+    const replyText = res.answer || res.reply || 'I am here to assist with your tasks, routines, and study plans.';
+    typingBubble.innerHTML = formatMarkdown(replyText);
   } catch (err) {
     typingBubble.textContent = 'Sorry, could not process request: ' + err.message;
   }
@@ -2206,6 +2530,7 @@ function renderProjectsViews() {
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span class="pill-badge ${p.status === 'Completed' ? 'pill-status-completed' : 'pill-status-progress'}">${p.status || 'Active'}</span>
                 <div style="display: flex; gap: 0.4rem;">
+                  <button class="icon-action-btn" title="Edit project" onclick="openEditProjectModal('${p.project_id}')">✏️</button>
                   <button class="icon-action-btn delete" title="Delete project" onclick="deleteProject('${p.project_id}')">🗑</button>
                 </div>
               </div>
@@ -2233,6 +2558,58 @@ function renderProjectsViews() {
         `;
       }).join('');
     }
+  }
+}
+
+function openEditProjectModal(projectId) {
+  const p = (state.projects || []).find(x => x.project_id === projectId);
+  if (!p) return;
+
+  document.getElementById('editProjId').value = p.project_id;
+  document.getElementById('editProjTitle').value = p.title;
+  document.getElementById('editProjDesc').value = p.description || '';
+  document.getElementById('editProjDeadline').value = p.deadline ? p.deadline.substring(0, 10) : '';
+  document.getElementById('editProjStatus').value = p.status || 'Active';
+  document.getElementById('editProjProgress').value = p.progress || 0;
+  document.getElementById('editProjProgressLabel').textContent = (p.progress || 0) + '%';
+
+  const teamSelect = document.getElementById('editProjTeamSelect');
+  if (teamSelect) {
+    teamSelect.innerHTML = '<option value="">None (Cross-team)</option>' +
+      (state.teams || []).map(t => `<option value="${t.team_id}" ${p.team_id === t.team_id ? 'selected' : ''}>👥 ${escapeHtml(t.name)}</option>`).join('');
+  }
+
+  const leadSelect = document.getElementById('editProjLeadSelect');
+  if (leadSelect) {
+    leadSelect.innerHTML = (state.users || []).map(u => `
+      <option value="${u.user_id}" ${p.lead_id === u.user_id ? 'selected' : ''}>👤 ${escapeHtml(u.name)} (${u.role})</option>
+    `).join('');
+  }
+
+  openModal('adminEditProjectModal');
+}
+
+async function handleSaveProjectEdit(event) {
+  event.preventDefault();
+  const projectId = document.getElementById('editProjId').value;
+  const title = document.getElementById('editProjTitle').value.trim();
+  const description = document.getElementById('editProjDesc').value.trim();
+  const team_id = document.getElementById('editProjTeamSelect').value || null;
+  const lead_id = document.getElementById('editProjLeadSelect').value || null;
+  const deadline = document.getElementById('editProjDeadline').value || null;
+  const status = document.getElementById('editProjStatus').value;
+  const progress = parseInt(document.getElementById('editProjProgress').value) || 0;
+
+  try {
+    await apiCall(`/projects/${projectId}`, 'PUT', {
+      title, description, team_id, lead_id, deadline, status, progress
+    });
+    showToast('Project updated successfully', 'success');
+    closeModal('adminEditProjectModal');
+    await loadProjects();
+    await loadDashboardStats();
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 

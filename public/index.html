@@ -524,10 +524,58 @@
       <section id="tab-timetable" class="tab-pane" style="display: none;">
         <div class="section-header-row">
           <div>
-            <h1 class="workspace-greeting">Routine & Schedule</h1>
-            <p class="workspace-subtext">Organize daily study routines, lectures, and activities.</p>
+            <h1 class="workspace-greeting">Routine & Habit Consistency</h1>
+            <p class="workspace-subtext">Track your daily study habits, maintain consecutive streaks, and monitor skipped days.</p>
           </div>
-          <button class="btn-primary" style="width: auto;" onclick="openAddScheduleModal()">+ Add Routine Slot</button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-outline" onclick="openAddRoutineModal()">+ Add Daily Routine</button>
+            <button class="btn-primary" style="width: auto;" onclick="openAddScheduleModal()">+ Timetable Slot</button>
+          </div>
+        </div>
+
+        <!-- ROUTINE CONSISTENCY & GRAPH PRESENTATION -->
+        <div class="routine-graph-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Weekly Routine Completion & Skipped Days</h3>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Real-time chart representation of your habits (Green = Done, Red = Skipped)</p>
+            </div>
+            <div id="routineHeaderStreak" class="routine-stat-pill streak">
+              🔥 <span id="routineHeaderStreakCount">0</span> Days Active Streak
+            </div>
+          </div>
+
+          <div style="width: 100%; height: 200px; position: relative;">
+            <canvas id="chartRoutineWeeklyConsistency"></canvas>
+          </div>
+
+          <div class="routine-summary-pills">
+            <span class="routine-stat-pill success" id="routineWeeklyCompletedCount">✓ 0 Completed this week</span>
+            <span class="routine-stat-pill skipped" id="routineWeeklySkippedCount">⚠️ 0 Days Skipped</span>
+            <div id="routineSkippedDaysPills" style="display: inline-flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;"></div>
+          </div>
+
+          <!-- 7-Day Consistency Badges -->
+          <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase;">7-Day Consistency Breakdown:</div>
+            <div class="weekly-pill-row" id="routineWeeklyPillRow"></div>
+          </div>
+        </div>
+
+        <!-- DAILY ROUTINE ITEMS CHECKLIST -->
+        <div class="section-header-row" style="margin-top: 1.5rem;">
+          <h2 class="section-title">Today's Daily Routines</h2>
+          <button class="btn-outline" style="font-size: 0.825rem;" onclick="openAddRoutineModal()">+ New Activity</button>
+        </div>
+        <div id="tabRoutineListContainer" class="tasks-container" style="margin-bottom: 2.5rem;"></div>
+
+        <!-- TIMETABLE & LECTURE SLOTS -->
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Weekly Timetable Schedule</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Fixed lecture and study session timetable.</p>
+          </div>
+          <button class="btn-primary" style="width: auto;" onclick="openAddScheduleModal()">+ Add Slot</button>
         </div>
 
         <div class="data-table-wrapper">
@@ -550,12 +598,12 @@
       <section id="tab-plans" class="tab-pane" style="display: none;">
         <div class="section-header-row">
           <div>
-            <h1 class="workspace-greeting">Plans & Roadmaps</h1>
-            <p class="workspace-subtext">Structured preparation for semester exams, practicals, and targets.</p>
+            <h1 class="workspace-greeting">Plans & Exam Roadmaps</h1>
+            <p class="workspace-subtext">Structured preparation for NIMCET, BCA semester exams, and career roadmaps.</p>
           </div>
-          <div style="display: flex; gap: 0.75rem;">
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
             <button class="btn-outline" onclick="openPrepSessionModal()">⏱ Log Study Time</button>
-            <button class="btn-primary" style="width: auto;" onclick="openAddPlanModal()">+ New Plan</button>
+            <button class="btn-primary" style="width: auto;" onclick="openAddPlanModal()">+ New Goal / Exam Plan</button>
           </div>
         </div>
         <div id="plansListContainer"></div>
@@ -1523,6 +1571,59 @@
     </div>
   </div>
 
+  <!-- Admin Edit Project Modal -->
+  <div id="adminEditProjectModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Project</h3>
+        <button class="modal-close-btn" onclick="closeModal('adminEditProjectModal')">×</button>
+      </div>
+      <form onsubmit="handleSaveProjectEdit(event)">
+        <input type="hidden" id="editProjId">
+        <div class="form-group">
+          <label class="form-label">Project Title</label>
+          <input type="text" id="editProjTitle" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="editProjDesc" class="form-input" rows="2"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Assigned Team / Group</label>
+            <select id="editProjTeamSelect" class="form-input">
+              <option value="">None (Cross-team)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Project Lead</label>
+            <select id="editProjLeadSelect" class="form-input"></select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Target Deadline</label>
+            <input type="date" id="editProjDeadline" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="editProjStatus" class="form-input">
+              <option value="Active">Active</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+              <option value="On Hold">On Hold</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Progress: <span id="editProjProgressLabel">0%</span></label>
+          <input type="range" id="editProjProgress" class="form-input" min="0" max="100" step="5" value="0" oninput="document.getElementById('editProjProgressLabel').textContent = this.value + '%'" style="padding: 0.2rem;">
+        </div>
+        <button type="submit" class="btn-primary">Update Project</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Admin Add Team Member Modal -->
   <div id="adminAddMemberModal" class="modal-overlay">
     <div class="modal-card">
@@ -1606,27 +1707,33 @@
   <div id="addPlanModal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 class="modal-title">Create New Plan</h3>
+        <h3 class="modal-title">Create New Plan / Exam Target</h3>
         <button class="modal-close-btn" onclick="closeModal('addPlanModal')">×</button>
       </div>
       <form onsubmit="handleSavePlan(event)">
         <div class="form-group">
-          <label class="form-label">Plan / Goal Name</label>
-          <input type="text" id="planGoalName" class="form-input" placeholder="e.g. NIMCET Preparation" required>
+          <label class="form-label">Plan / Exam Goal Name</label>
+          <input type="text" id="planGoalName" class="form-input" placeholder="e.g. NIMCET 2027 Preparation" required>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
             <label class="form-label">Category</label>
             <select id="planCategory" class="form-input">
-              <option value="Academic">Academic</option>
-              <option value="Skill">Skill</option>
-              <option value="Career">Career</option>
-              <option value="Personal">Personal</option>
+              <option value="Academic" selected>Academic (NIMCET / MCA / BCA)</option>
+              <option value="Skill">Skill & Development</option>
+              <option value="Career">Career & Placement</option>
+              <option value="Personal">Personal Routine</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Duration Label</label>
-            <input type="text" id="planDuration" class="form-input" placeholder="e.g. 3 Months" value="3 Months">
+            <label class="form-label">Duration Option</label>
+            <input type="text" id="planDuration" class="form-input" placeholder="e.g. 6 Months NIMCET Track" value="6 Months">
+            <div style="display: flex; gap: 0.35rem; margin-top: 0.35rem; flex-wrap: wrap;">
+              <button type="button" class="demo-chip" style="font-size: 0.72rem; padding: 2px 6px;" onclick="document.getElementById('planDuration').value = '1 Month'">1 Month</button>
+              <button type="button" class="demo-chip" style="font-size: 0.72rem; padding: 2px 6px;" onclick="document.getElementById('planDuration').value = '3 Months'">3 Months</button>
+              <button type="button" class="demo-chip" style="font-size: 0.72rem; padding: 2px 6px;" onclick="document.getElementById('planDuration').value = '6 Months (NIMCET Track)'">6 Months</button>
+              <button type="button" class="demo-chip" style="font-size: 0.72rem; padding: 2px 6px;" onclick="document.getElementById('planDuration').value = '1 Year Intensive'">1 Year</button>
+            </div>
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -1635,15 +1742,92 @@
             <input type="date" id="planStartDate" class="form-input">
           </div>
           <div class="form-group">
-            <label class="form-label">Target Date</label>
+            <label class="form-label">Target Exam Date</label>
             <input type="date" id="planTargetDate" class="form-input" required>
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Description</label>
-          <textarea id="planDesc" class="form-input" rows="2" placeholder="Brief target description..."></textarea>
+          <label class="form-label">Target Study Hours</label>
+          <input type="number" id="planTargetHours" class="form-input" value="300" step="10">
         </div>
-        <button type="submit" class="btn-primary">Create Roadmap</button>
+        <div class="form-group">
+          <label class="form-label">Description & Strategy</label>
+          <textarea id="planDesc" class="form-input" rows="2" placeholder="Brief target description, focus subjects, or strategy..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Create Roadmap & Auto-generate Topics</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Plan Modal -->
+  <div id="editPlanModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Plan & Duration</h3>
+        <button class="modal-close-btn" onclick="closeModal('editPlanModal')">×</button>
+      </div>
+      <form onsubmit="handleSaveEditPlan(event)">
+        <input type="hidden" id="editPlanId">
+        <div class="form-group">
+          <label class="form-label">Plan / Exam Goal Name</label>
+          <input type="text" id="editPlanGoalName" class="form-input" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="editPlanCategory" class="form-input">
+              <option value="Academic">Academic</option>
+              <option value="Skill">Skill</option>
+              <option value="Career">Career</option>
+              <option value="Personal">Personal</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration Option</label>
+            <input type="text" id="editPlanDuration" class="form-input" required>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Start Date</label>
+            <input type="date" id="editPlanStartDate" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Date</label>
+            <input type="date" id="editPlanTargetDate" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Study Hours</label>
+          <input type="number" id="editPlanTargetHours" class="form-input" value="300" step="10">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="editPlanDesc" class="form-input" rows="2"></textarea>
+        </div>
+        <button type="submit" class="btn-primary">Save Plan Changes</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Plan Topic / Daily Task Modal -->
+  <div id="addPlanTopicModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Add Daily Task / Syllabus Topic</h3>
+        <button class="modal-close-btn" onclick="closeModal('addPlanTopicModal')">×</button>
+      </div>
+      <form onsubmit="handleSavePlanTopic(event)">
+        <input type="hidden" id="planTopicPlanId">
+        <div class="form-group">
+          <label class="form-label">Topic / Daily Task Title</label>
+          <input type="text" id="planTopicTitle" class="form-input" placeholder="e.g. Mathematics - Vectors & 3D Lines" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Allocated Study Hours</label>
+          <input type="number" id="planTopicHours" class="form-input" value="2.5" step="0.5" required>
+        </div>
+        <button type="submit" class="btn-primary">Add to Plan</button>
       </form>
     </div>
   </div>

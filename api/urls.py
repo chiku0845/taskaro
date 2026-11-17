@@ -36,10 +36,14 @@ urlpatterns = [
 
     # Routines
     path('routines', views.RoutineListView.as_view(), name='routine_list'),
+    path('routines/<str:pk>', views.RoutineDetailView.as_view(), name='routine_detail'),
     path('routines/<str:pk>/log', views.RoutineLogView.as_view(), name='routine_log'),
 
     # Plans
     path('plans', views.PlanListView.as_view(), name='plan_list'),
+    path('plans/<str:pk>', views.PlanDetailView.as_view(), name='plan_detail'),
+    path('plans/<str:pk>/topics', views.PlanTopicListView.as_view(), name='plan_topics'),
+    path('plans/topics/<str:pk>', views.PlanTopicDetailView.as_view(), name='plan_topic_detail'),
 
     # Notes
     path('notes', views.NoteListView.as_view(), name='note_list'),
@@ -60,6 +64,7 @@ urlpatterns = [
     path('analytics/reports', views.AnalyticsReportsView.as_view(), name='analytics_reports'),
     path('analytics/logs', views.AnalyticsLogsView.as_view(), name='analytics_logs'),
 
-    # AI Chatbot
+    # AI Chatbot (supports both /ai/ask and /ai/chat)
+    path('ai/ask', views.AiChatView.as_view(), name='ai_ask'),
     path('ai/chat', views.AiChatView.as_view(), name='ai_chat'),
 ]

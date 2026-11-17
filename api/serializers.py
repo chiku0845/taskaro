@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import (
     UserAccount, Team, TeamMember, Project, Task,
-    Routine, RoutineLog, Plan, PlanMilestone, Note,
+    Routine, RoutineLog, Plan, PlanMilestone, PlanTopic, Note,
     Schedule, Message, Notification, ActivityLog
 )
 
@@ -69,10 +69,23 @@ class TaskSerializer(serializers.ModelSerializer):
             'team_name', 'project_title', 'isOverdue'
         ]
 
+class RoutineLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoutineLog
+        fields = ['log_id', 'routine_id', 'user_id', 'status', 'date', 'logged_at']
+
 class RoutineSerializer(serializers.ModelSerializer):
+    today_status = serializers.CharField(read_only=True, default='Pending')
+    weekly_logs = serializers.ListField(child=serializers.DictField(), read_only=True, default=list)
+
     class Meta:
         model = Routine
-        fields = ['routine_id', 'user_id', 'title', 'routine_type', 'scheduled_time', 'streak', 'created_at']
+        fields = ['routine_id', 'user_id', 'title', 'routine_type', 'scheduled_time', 'streak', 'created_at', 'today_status', 'weekly_logs']
+
+class PlanTopicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanTopic
+        fields = ['topic_id', 'plan_id', 'title', 'allocated_hours', 'status', 'created_at']
 
 class PlanMilestoneSerializer(serializers.ModelSerializer):
     class Meta:
@@ -81,12 +94,21 @@ class PlanMilestoneSerializer(serializers.ModelSerializer):
 
 class PlanSerializer(serializers.ModelSerializer):
     milestones = PlanMilestoneSerializer(many=True, read_only=True)
+    topics = PlanTopicSerializer(many=True, read_only=True)
     daysRemaining = serializers.IntegerField(read_only=True, default=0)
-    progress = serializers.IntegerField(read_only=True, default=0)
+    progressPercent = serializers.IntegerField(read_only=True, default=0)
+    totalTopics = serializers.IntegerField(read_only=True, default=0)
+    completedTopics = serializers.IntegerField(read_only=True, default=0)
+    skippedTopics = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Plan
-        fields = ['plan_id', 'user_id', 'goal_name', 'category', 'target_date', 'duration_label', 'completed_hours', 'target_hours', 'created_at', 'milestones', 'daysRemaining', 'progress']
+        fields = [
+            'plan_id', 'user_id', 'goal_name', 'category', 'target_date', 'start_date',
+            'duration_label', 'description', 'completed_hours', 'target_hours',
+            'created_at', 'milestones', 'topics', 'daysRemaining', 'progressPercent',
+            'totalTopics', 'completedTopics', 'skippedTopics'
+        ]
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:

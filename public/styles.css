@@ -730,25 +730,59 @@ select.form-input option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.75rem;
+  padding: 0.75rem 1.25rem;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 40;
-  gap: 1rem;
-  max-width: 100vw;
+  gap: 0.75rem;
+  max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .nav-links-wrapper {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+@media (max-width: 1250px) {
+  .top-navbar {
+    padding: 0.6rem 0.85rem;
+    gap: 0.5rem;
+  }
+  .nav-search-box {
+    width: 130px !important;
+  }
+  .nav-item {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.825rem !important;
+  }
+  .floating-ask-ai-btn {
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.825rem !important;
+  }
+}
+
+@media (max-width: 1050px) {
+  .nav-search-box {
+    display: none !important;
+  }
+  .user-profile-badge span {
+    display: none !important;
+  }
+  .brand-name-text {
+    font-size: 1.2rem !important;
+  }
 }
 
 .nav-links-wrapper::-webkit-scrollbar {
@@ -2058,9 +2092,11 @@ select.form-input option {
    ---------------------------------------------------- */
 .bento-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 1.25rem;
   margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 .bento-card {
   background: var(--bg-card);
@@ -2071,6 +2107,7 @@ select.form-input option {
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  min-width: 0;
 }
 .bento-card:hover {
   transform: translateY(-2px);
@@ -2083,7 +2120,7 @@ select.form-input option {
 .span-6 { grid-column: span 6; }
 .span-12 { grid-column: span 12; }
 
-@media (max-width: 1200px) {
+@media (max-width: 1100px) {
   .span-8 { grid-column: span 12; }
   .span-4 { grid-column: span 12; }
   .span-3 { grid-column: span 6; }
@@ -2096,11 +2133,13 @@ select.form-input option {
 
 .dashboard-two-col {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
-  gap: 1.75rem;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .dashboard-two-col {
     grid-template-columns: 1fr;
   }
@@ -2182,4 +2221,135 @@ select.form-input option {
 .team-avatar-stack:first-child {
   margin-left: 0;
 }
+
+/* ----------------------------------------------------
+   ROUTINE PERFORMANCE & CONSISTENCY GRAPH
+   ---------------------------------------------------- */
+.routine-graph-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.routine-summary-pills {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.routine-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.825rem;
+  font-weight: 600;
+  background: #f1f5f9;
+  color: var(--text-main);
+}
+[data-theme="dark"] .routine-stat-pill {
+  background: #1e293b;
+}
+
+.routine-stat-pill.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+.routine-stat-pill.skipped {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.routine-stat-pill.streak {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.weekly-pill-row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.day-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  min-width: 48px;
+  text-align: center;
+}
+[data-theme="dark"] .day-badge {
+  background: #0f172a;
+}
+
+.day-badge.completed {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+.day-badge.skipped {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* ----------------------------------------------------
+   PLAN TOPICS & DAILY ROADMAP TASKS
+   ---------------------------------------------------- */
+.topic-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.45rem;
+  transition: all 0.15s ease;
+}
+.topic-item-row:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+.topic-item-row.completed {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+[data-theme="dark"] .topic-item-row.completed {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.topic-item-row.skipped {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+[data-theme="dark"] .topic-item-row.skipped {
+  background: rgba(244, 63, 94, 0.1);
+  border-color: rgba(244, 63, 94, 0.3);
+}
+
+.topic-title-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.topic-title-text.completed {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+.topic-title-text.skipped {
+  color: #e11d48;
+}
+
 

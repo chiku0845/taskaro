@@ -1,6 +1,6 @@
 import math
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import requests
 from django.db import models
 from django.utils import timezone as dj_timezone
@@ -10,13 +10,14 @@ from rest_framework import status
 
 from .models import (
     UserAccount, Team, TeamMember, Project, Task,
-    Routine, RoutineLog, Plan, PlanMilestone, Note,
+    Routine, RoutineLog, Plan, PlanMilestone, PlanTopic, Note,
     Schedule, Message, Notification, ActivityLog
 )
 from .serializers import (
     UserAccountSerializer, TeamSerializer, ProjectSerializer, TaskSerializer,
-    RoutineSerializer, PlanSerializer, NoteSerializer, ScheduleSerializer,
-    MessageSerializer, NotificationSerializer, ActivityLogSerializer
+    RoutineSerializer, RoutineLogSerializer, PlanSerializer, PlanTopicSerializer,
+    NoteSerializer, ScheduleSerializer, MessageSerializer, NotificationSerializer,
+    ActivityLogSerializer
 )
 from .authentication import (
     hash_password, verify_password, generate_auth_token,
@@ -734,8 +735,53 @@ class RoutineListView(APIView):
     def get(self, request):
         user = get_auth_user(request)
         if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-        routines = Routine.objects.filter(user_id=user.user_id)
-        return Response({'routines': RoutineSerializer(routines, many=True).data})
+        routines = Routine.objects.filter(user_id=user.user_id).order_by('scheduled_time')
+        today_str = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+        last_7_days = [(datetime.now(timezone.utc) - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
+        day_names = [(datetime.now(timezone.utc) - timedelta(days=i)).strftime('%a') for i in range(6, -1, -1)]
+
+        results = []
+        for r in routines:
+            data = RoutineSerializer(r).data
+            today_log = RoutineLog.objects.filter(routine_id=r.routine_id, user_id=user.user_id, date=today_str).first()
+            data['today_status'] = today_log.status if today_log else 'Pending'
+
+            w_logs = []
+            for d in last_7_days:
+                l = RoutineLog.objects.filter(routine_id=r.routine_id, user_id=user.user_id, date=d).first()
+                w_logs.append({
+                    'date': d,
+                    'status': l.status if l else 'Pending'
+                })
+            data['weekly_logs'] = w_logs
+            results.append(data)
+
+        weekly_completed = []
+        weekly_skipped = []
+        for d in last_7_days:
+            c = RoutineLog.objects.filter(user_id=user.user_id, date=d, status='Completed').count()
+            s = RoutineLog.objects.filter(user_id=user.user_id, date=d, status='Skipped').count()
+            weekly_completed.append(c)
+            weekly_skipped.append(s)
+
+        skipped_logs = RoutineLog.objects.filter(user_id=user.user_id, status='Skipped').order_by('-date')[:20]
+        skipped_dates = list(set([l.date for l in skipped_logs]))
+        skipped_dates.sort(reverse=True)
+
+        return Response({
+            'routines': results,
+            'analytics': {
+                'labels': day_names,
+                'dates': last_7_days,
+                'completed': weekly_completed,
+                'skipped': weekly_skipped,
+                'total_routines': routines.count(),
+                'total_completed_week': sum(weekly_completed),
+                'total_skipped_week': sum(weekly_skipped),
+                'skipped_days_list': skipped_dates
+            }
+        })
 
     def post(self, request):
         user = get_auth_user(request)
@@ -751,7 +797,28 @@ class RoutineListView(APIView):
             scheduled_time=request.data.get('scheduled_time', '08:00 AM'),
             streak=0
         )
-        return Response({'message': 'Routine created', 'routine_id': r.routine_id})
+        return Response({'message': 'Routine created', 'routine_id': r.routine_id}, status=status.HTTP_201_CREATED)
+
+class RoutineDetailView(APIView):
+    def put(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            r = Routine.objects.get(routine_id=pk, user_id=user.user_id)
+            if 'title' in request.data: r.title = request.data['title'].strip()
+            if 'routine_type' in request.data: r.routine_type = request.data['routine_type']
+            if 'scheduled_time' in request.data: r.scheduled_time = request.data['scheduled_time'].strip()
+            r.save()
+            return Response({'message': 'Routine updated successfully'})
+        except Routine.DoesNotExist:
+            return Response({'error': 'Routine not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        Routine.objects.filter(routine_id=pk, user_id=user.user_id).delete()
+        RoutineLog.objects.filter(routine_id=pk, user_id=user.user_id).delete()
+        return Response({'message': 'Routine deleted successfully'})
 
 class RoutineLogView(APIView):
     def post(self, request, pk):
@@ -759,11 +826,30 @@ class RoutineLogView(APIView):
         if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
             r = Routine.objects.get(routine_id=pk, user_id=user.user_id)
-            status_val = request.data.get('status', 'Completed')
+            status_val = request.data.get('status', 'Completed') # 'Completed', 'Skipped', 'Pending'
+            date_val = request.data.get('date') or datetime.now(timezone.utc).strftime('%Y-%m-%d')
+
+            log_entry, created = RoutineLog.objects.get_or_create(
+                routine_id=r.routine_id,
+                user_id=user.user_id,
+                date=date_val,
+                defaults={'log_id': 'log_' + secrets.token_hex(6), 'status': status_val}
+            )
+            if not created:
+                log_entry.status = status_val
+                log_entry.save(update_fields=['status'])
+
             if status_val == 'Completed':
                 r.streak += 1
                 r.save(update_fields=['streak'])
-            return Response({'message': 'Routine logged successfully', 'streak': r.streak})
+            elif status_val == 'Skipped':
+                r.streak = max(0, r.streak - 1)
+                r.save(update_fields=['streak'])
+
+            msg = f"Routine marked as {status_val} for {date_val}"
+            if status_val == 'Skipped':
+                msg = f"Activity marked as skipped for {date_val}. Day recorded in skipped log."
+            return Response({'message': msg, 'streak': r.streak, 'status': status_val, 'date': date_val})
         except Routine.DoesNotExist:
             return Response({'error': 'Routine not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -771,22 +857,30 @@ class PlanListView(APIView):
     def get(self, request):
         user = get_auth_user(request)
         if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
-        plans = Plan.objects.filter(user_id=user.user_id)
+        plans = Plan.objects.filter(user_id=user.user_id).order_by('-created_at')
         results = []
         now = datetime.now(timezone.utc)
         for p in plans:
             d = PlanSerializer(p).data
-            # Compute days remaining
             try:
                 target = datetime.fromisoformat(p.target_date).replace(tzinfo=timezone.utc)
                 d['daysRemaining'] = max(0, (target - now).days)
             except Exception:
                 d['daysRemaining'] = 45
 
-            prog = round((p.completed_hours / p.target_hours) * 100) if p.target_hours > 0 else 0
-            d['progress'] = min(100, prog)
-            ms = PlanMilestone.objects.filter(plan_id=p.plan_id)
-            d['milestones'] = [{'milestone_id': m.milestone_id, 'title': m.title, 'completed': m.completed} for m in ms]
+            topics = PlanTopic.objects.filter(plan_id=p.plan_id).order_by('created_at')
+            tot_topics = topics.count()
+            comp_topics = topics.filter(status='Completed').count()
+            skip_topics = topics.filter(status='Skipped').count()
+
+            prog = round((comp_topics / tot_topics) * 100) if tot_topics > 0 else (
+                round((p.completed_hours / p.target_hours) * 100) if p.target_hours > 0 else 0
+            )
+            d['progressPercent'] = min(100, prog)
+            d['totalTopics'] = tot_topics
+            d['completedTopics'] = comp_topics
+            d['skippedTopics'] = skip_topics
+            d['topics'] = PlanTopicSerializer(topics, many=True).data
             results.append(d)
         return Response({'plans': results})
 
@@ -796,17 +890,111 @@ class PlanListView(APIView):
         goal = request.data.get('goal_name', '').strip()
         if not goal: return Response({'error': 'Goal name required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        plan_id = 'plan_' + secrets.token_hex(5)
         p = Plan.objects.create(
-            plan_id='plan_' + secrets.token_hex(5),
+            plan_id=plan_id,
             user_id=user.user_id,
             goal_name=goal,
             category=request.data.get('category', 'Academic'),
             target_date=request.data.get('target_date', '2026-12-31'),
+            start_date=request.data.get('start_date', ''),
             duration_label=request.data.get('duration_label', '3 Months'),
+            description=request.data.get('description', ''),
             completed_hours=0.0,
             target_hours=float(request.data.get('target_hours', 100.0))
         )
-        return Response({'message': 'Plan created', 'plan_id': p.plan_id})
+
+        if 'nimcet' in goal.lower() or 'mca' in goal.lower():
+            nimcet_topics = [
+                ("Coordinate Geometry & 2D/3D (Maths)", 3.0),
+                ("Trigonometry & Calculus (Maths)", 3.0),
+                ("Probability & Statistics (Maths)", 2.5),
+                ("Algebra, Vectors & Matrices (Maths)", 2.5),
+                ("Logical Reasoning & Puzzles (Analytical)", 2.0),
+                ("Data Interpretation & Venn Diagrams", 1.5),
+                ("Computer Awareness - Number Systems & Logic Gates", 1.5),
+                ("General English Comprehension & Vocab", 1.0),
+                ("NIMCET Mock Test 01 - Full Length Analysis", 2.0)
+            ]
+            for title, hrs in nimcet_topics:
+                PlanTopic.objects.create(
+                    topic_id='top_' + secrets.token_hex(5),
+                    plan_id=plan_id,
+                    title=title,
+                    allocated_hours=hrs,
+                    status='Pending'
+                )
+
+        return Response({'message': 'Plan created successfully', 'plan_id': p.plan_id}, status=status.HTTP_201_CREATED)
+
+class PlanDetailView(APIView):
+    def put(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            p = Plan.objects.get(plan_id=pk, user_id=user.user_id)
+            if 'goal_name' in request.data: p.goal_name = request.data['goal_name'].strip()
+            if 'category' in request.data: p.category = request.data['category']
+            if 'duration_label' in request.data: p.duration_label = request.data['duration_label'].strip()
+            if 'start_date' in request.data: p.start_date = request.data['start_date']
+            if 'target_date' in request.data: p.target_date = request.data['target_date']
+            if 'description' in request.data: p.description = request.data['description'].strip()
+            if 'target_hours' in request.data: p.target_hours = float(request.data['target_hours'])
+            if 'completed_hours' in request.data: p.completed_hours = float(request.data['completed_hours'])
+            p.save()
+            return Response({'message': 'Plan updated successfully'})
+        except Plan.DoesNotExist:
+            return Response({'error': 'Plan not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        Plan.objects.filter(plan_id=pk, user_id=user.user_id).delete()
+        PlanTopic.objects.filter(plan_id=pk).delete()
+        PlanMilestone.objects.filter(plan_id=pk).delete()
+        return Response({'message': 'Plan deleted successfully'})
+
+class PlanTopicListView(APIView):
+    def get(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        topics = PlanTopic.objects.filter(plan_id=pk).order_by('created_at')
+        return Response({'topics': PlanTopicSerializer(topics, many=True).data})
+
+    def post(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        title = request.data.get('title', '').strip()
+        if not title: return Response({'error': 'Topic title is required'}, status=status.HTTP_400_BAD_REQUEST)
+        hrs = float(request.data.get('allocated_hours', 2.0))
+        t = PlanTopic.objects.create(
+            topic_id='top_' + secrets.token_hex(5),
+            plan_id=pk,
+            title=title,
+            allocated_hours=hrs,
+            status='Pending'
+        )
+        return Response({'message': 'Topic added successfully', 'topic_id': t.topic_id}, status=status.HTTP_201_CREATED)
+
+class PlanTopicDetailView(APIView):
+    def put(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            t = PlanTopic.objects.get(topic_id=pk)
+            if 'title' in request.data: t.title = request.data['title'].strip()
+            if 'allocated_hours' in request.data: t.allocated_hours = float(request.data['allocated_hours'])
+            if 'status' in request.data: t.status = request.data['status']
+            t.save()
+            return Response({'message': f'Topic updated to {t.status}'})
+        except PlanTopic.DoesNotExist:
+            return Response({'error': 'Topic not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    def delete(self, request, pk):
+        user = get_auth_user(request)
+        if not user: return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        PlanTopic.objects.filter(topic_id=pk).delete()
+        return Response({'message': 'Topic deleted successfully'})
 
 class NoteListView(APIView):
     def get(self, request):
@@ -1094,23 +1282,98 @@ class AiChatView(APIView):
         if not user:
             return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        prompt = request.data.get('prompt', '').strip()
+        prompt = (request.data.get('question') or request.data.get('prompt') or request.data.get('message') or '').strip()
         if not prompt:
-            return Response({'error': 'Prompt is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Question or prompt is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Context-aware intelligent response using current task and schedule state
         p_lower = prompt.lower()
-        if 'task' in p_lower or 'pending' in p_lower:
-            tasks = Task.objects.filter(assignee_id=user.user_id, status__in=['Pending', 'In Progress'])
-            titles = [t.title for t in tasks[:3]]
-            reply = f"You currently have {tasks.count()} active tasks. Your highest priority items are: {', '.join(titles) if titles else 'None right now. Great job!'}."
-        elif 'routine' in p_lower or 'schedule' in p_lower:
-            rts = Routine.objects.filter(user_id=user.user_id)
-            reply = f"You have {rts.count()} scheduled daily routines. Staying consistent with your morning routine will boost your overall sprint velocity!"
-        elif 'project' in p_lower or 'team' in p_lower:
-            teams = TeamMember.objects.filter(user_id=user.user_id).count()
-            reply = f"You are connected to {teams} active team(s). All shared tasks and project deliverables are synchronized in real time."
-        else:
-            reply = f"Taskaro AI Assistant is active. I can help organize your study schedule, track critical path dependencies, manage project deadlines, and prioritize pending tasks."
 
-        return Response({'reply': reply})
+        # 1. Admin AI Context
+        if user.role == 'admin':
+            total_users = UserAccount.objects.filter(role='user').count()
+            total_teams = Team.objects.count()
+            total_projects = Project.objects.count()
+            active_projects = Project.objects.filter(status='Active').count()
+            all_tasks = Task.objects.all()
+            pending_tasks = all_tasks.filter(status__in=['Pending', 'In Progress']).count()
+            comp_tasks = all_tasks.filter(status='Completed').count()
+
+            if 'user' in p_lower or 'member' in p_lower or 'team' in p_lower:
+                teams = list(Team.objects.values_list('name', flat=True))
+                reply = (
+                    f"**System Overview - Teams & Users**\n\n"
+                    f"• **Registered Users:** {total_users}\n"
+                    f"• **Active Teams/Groups:** {total_teams} ({', '.join(teams) if teams else 'No teams yet'})\n"
+                    f"• **Project Initiatives:** {total_projects} total ({active_projects} active)\n\n"
+                    f"You can manage user accounts, assign team projects, or edit project targets from the Admin Console."
+                )
+            elif 'project' in p_lower:
+                projs = Project.objects.all()[:4]
+                proj_summaries = [f"**{p.title}** ({p.status}, progress: {p.progress}%)" for p in projs]
+                reply = (
+                    f"**Projects Summary**\n\n"
+                    f"Currently tracking {total_projects} projects in Taskaro:\n"
+                    + ("\n".join([f"• {ps}" for ps in proj_summaries]) if proj_summaries else "• No active projects recorded.") +
+                    f"\n\nTo edit deadlines, progress, or team leads, use the **✏️ Edit Project** button on any project card in the Projects tab."
+                )
+            elif 'task' in p_lower or 'workload' in p_lower:
+                reply = (
+                    f"**Workload & Task Execution**\n\n"
+                    f"• **Pending/In Progress Tasks:** {pending_tasks}\n"
+                    f"• **Completed Milestones:** {comp_tasks}\n"
+                    f"• **System Health:** 100% operational with real-time PostgreSQL synchronization."
+                )
+            else:
+                reply = (
+                    f"Hello Admin **{user.name}**! 👋 I have full administrative oversight of Taskaro.\n\n"
+                    f"• **Platform Stats:** {total_users} users, {total_teams} teams, {total_projects} projects, {pending_tasks} active tasks.\n"
+                    f"• You can edit projects, manage group messaging, assign tasks, or ask me for workload analytics."
+                )
+
+        # 2. User AI Context (with NIMCET preparation intelligence)
+        else:
+            if 'nimcet' in p_lower or 'mca' in p_lower or 'exam' in p_lower:
+                reply = (
+                    f"🎯 **NIMCET Preparation Strategy & Syllabus Guide**\n\n"
+                    f"NIMCET consists of 120 questions (total 1000 marks):\n"
+                    f"1. **Mathematics (50 Questions = 600 Marks):** Highest weightage! Focus on Coordinate Geometry, Vectors, Calculus, Probability, and Matrices.\n"
+                    f"2. **Analytical Ability & Logical Reasoning (40 Questions = 240 Marks):** Puzzles, blood relations, sequences, and Venn diagrams.\n"
+                    f"3. **Computer Awareness (20 Questions = 120 Marks):** Data representation (Binary, Octal, Hex, 2's complement), logic gates, and Boolean algebra.\n"
+                    f"4. **General English (10 Questions = 40 Marks):** Reading comprehension, grammar, and vocabulary.\n\n"
+                    f"💡 **Recommended Daily Routine:**\n"
+                    f"• 3 Hours: Mathematics theory + problem solving\n"
+                    f"• 1.5 Hours: Analytical Reasoning practice\n"
+                    f"• 1 Hour: Computer Awareness & English\n"
+                    f"• 30 Mins: Daily revision\n\n"
+                    f"Use the **Plans & Roadmaps** tab to log your hours, add duration options, and check off daily syllabus tasks!"
+                )
+            elif 'routine' in p_lower or 'schedule' in p_lower or 'skip' in p_lower:
+                routines = Routine.objects.filter(user_id=user.user_id)
+                skipped = RoutineLog.objects.filter(user_id=user.user_id, status='Skipped').count()
+                reply = (
+                    f"📅 **Daily Routine & Consistency Tracking**\n\n"
+                    f"• You have **{routines.count()}** active routines configured.\n"
+                    f"• Total days logged as skipped: **{skipped}**.\n\n"
+                    f"**Pro Tip:** In the **Routine** tab, you can click **✓ Done** or **⏭ Skip** on each activity. Your weekly consistency chart will automatically show completed vs skipped days so you stay accountable!"
+                )
+            elif 'task' in p_lower or 'pending' in p_lower:
+                my_tasks = Task.objects.filter(assignee_id=user.user_id, status__in=['Pending', 'In Progress'])
+                titles = [f"**{t.title}** ({t.priority} priority)" for t in my_tasks[:4]]
+                reply = (
+                    f"📋 **Your Assigned Tasks**\n\n"
+                    f"You have **{my_tasks.count()}** active tasks.\n"
+                    + ("\n".join([f"• {t}" for t in titles]) if titles else "All your tasks are completed! Great job! 🎉") +
+                    f"\n\nUpdate your progress slider or mark tasks as completed in the **My Tasks** tab."
+                )
+            else:
+                reply = (
+                    f"Hello **{user.name}**! 👋 I am your Taskaro AI productivity assistant.\n\n"
+                    f"I can help you:\n"
+                    f"• Organize your **NIMCET exam preparation** and syllabus roadmap\n"
+                    f"• Track your **Daily Routine**, streaks, and skipped days\n"
+                    f"• Prioritize assigned **Tasks & Milestones**\n"
+                    f"• Manage your study schedule and timetable\n\n"
+                    f"What would you like to focus on right now?"
+                )
+
+        return Response({'answer': reply, 'reply': reply})
