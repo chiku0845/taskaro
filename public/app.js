@@ -38,6 +38,12 @@ let chartEfficiencyInstance = null;
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   checkAuth();
+  window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+  window.addEventListener('scroll', () => {
+    if (window.scrollX !== 0) {
+      window.scrollTo(0, window.scrollY);
+    }
+  }, { passive: true });
 });
 
 function updateThemeIcons(theme) {
@@ -81,6 +87,9 @@ function showAuth() {
 
 function showApp() {
   document.getElementById('authView').style.display = 'none';
+  window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+  if (document.documentElement) document.documentElement.scrollLeft = 0;
+  if (document.body) document.body.scrollLeft = 0;
 
   if (state.user.role === 'admin') {
     // Show Admin Shell
@@ -189,7 +198,8 @@ async function handleAuthSubmit(event) {
     const name = document.getElementById('authName').value.trim();
     const age = parseInt(document.getElementById('authAge').value) || 20;
     const gender = document.getElementById('authGender') ? document.getElementById('authGender').value : 'Unspecified';
-    const role = state.portalRole === 'admin' ? (document.getElementById('authRoleSelect').value || 'admin') : 'user';
+    const roleSelect = document.getElementById('authRoleSelect');
+    const role = roleSelect ? roleSelect.value : (state.portalRole === 'admin' ? 'admin' : 'user');
     const confirmPassword = document.getElementById('authConfirmPassword').value;
 
     if (!name) {
@@ -260,6 +270,9 @@ function handleLogout() {
 // ----------------------------------------------------
 function navigateToTab(tabName) {
   state.activeTab = tabName;
+  window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+  if (document.documentElement) document.documentElement.scrollLeft = 0;
+  if (document.body) document.body.scrollLeft = 0;
 
   // Update navbar & sidebar active styles
   document.querySelectorAll('.nav-item').forEach(btn => {

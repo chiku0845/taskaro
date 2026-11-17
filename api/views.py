@@ -115,19 +115,19 @@ class LoginView(APIView):
         try:
             user = UserAccount.objects.get(email=email)
         except UserAccount.DoesNotExist:
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'No account found with this email. Please click "Create Account" below to register.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if not verify_password(password, user.password_hash, user.password_salt):
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Incorrect password. Please check your password and try again.'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user.account_status != 'active':
             return Response({'error': 'Your account has been deactivated. Please contact an administrator.'}, status=status.HTTP_403_FORBIDDEN)
 
         # STRICT DUAL-PORTAL SEPARATION
         if portal_role == 'admin' and user.role != 'admin':
-            return Response({'error': 'Access denied: You do not have administrator permissions for Admin Portal.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'This account is registered as a regular User. Please switch to "User Login" tab above.'}, status=status.HTTP_403_FORBIDDEN)
         if portal_role == 'user' and user.role != 'user':
-            return Response({'error': 'Access denied: This is an Administrator account. Please use Admin Login.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'This is an Administrator account. Please switch to "Admin Login" tab above.'}, status=status.HTTP_403_FORBIDDEN)
 
         user.last_login = dj_timezone.now()
         user.save(update_fields=['last_login'])
